@@ -1,0 +1,11 @@
+@Host=http://localhost:5189
+
+###
+
+POST {{Host}}/llm/chat
+Content-Type: application/json
+
+[{
+    "$type": "TextContent",
+    "Text": "Hello world!"
+}]

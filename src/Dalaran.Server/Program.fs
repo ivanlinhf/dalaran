@@ -16,7 +16,7 @@ module Program =
     let main args =
 
         let builder = WebApplication.CreateBuilder args
-        
+
         builder.AddServiceDefaults () |> ignore
         builder.AddAzureOpenAIClient(
             "OpenAI",
@@ -46,11 +46,13 @@ module Program =
         ) |> ignore
         builder.Services.AddTransient<ILlmService, LlmService> () |> ignore
         builder.Services.AddControllers () |> ignore
+        builder.Services.AddOpenApi () |> ignore
 
         let app = builder.Build ()
 
         app.MapDefaultEndpoints () |> ignore
         app.MapControllers () |> ignore
+        app.MapOpenApi () |> ignore
         app.Run ()
 
         exitCode
