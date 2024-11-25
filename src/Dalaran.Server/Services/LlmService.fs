@@ -3,12 +3,11 @@
 open System.Collections.Generic
 open System.Threading
 
-open FSharp.Control
 open Microsoft.SemanticKernel
 open Microsoft.SemanticKernel.ChatCompletion
 
 type ILlmService =
-    abstract Chat: contents: KernelContent seq * token: CancellationToken -> IAsyncEnumerable<string>
+    abstract Chat: contents: KernelContent seq * token: CancellationToken -> IAsyncEnumerable<StreamingChatMessageContent>
 
 type LlmService (chatCompletion: IChatCompletionService, kernel: Kernel) =
 
@@ -26,4 +25,3 @@ type LlmService (chatCompletion: IChatCompletionService, kernel: Kernel) =
             let executionSettings = PromptExecutionSettings (FunctionChoiceBehavior = FunctionChoiceBehavior.Auto())
 
             _chatCompletion.GetStreamingChatMessageContentsAsync (history, executionSettings, _kernel, token)
-            |> TaskSeq.map (fun x -> x.Content)
