@@ -1,5 +1,6 @@
 ﻿namespace Dalaran.Server.Controllers
 
+open System.ComponentModel.DataAnnotations
 open System.Threading
 
 open Microsoft.AspNetCore.Http
@@ -18,5 +19,5 @@ type StorageController (logger: ILogger<StorageController>, service: IStorageSer
 
     [<HttpPost>]
     [<Route("[action]")>]
-    member _.Upload (files: IFormFileCollection, token: CancellationToken) =
+    member _.Upload ([<MinLength(1)>] files: IFormFileCollection, token: CancellationToken) =
         _service.Upload files token

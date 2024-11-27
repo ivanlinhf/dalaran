@@ -8,9 +8,7 @@ open Microsoft.AspNetCore.Http
 open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.Logging
 
-type UploadResult = {
-    Uris: Uri seq
-}
+type UploadResult = { Uris: Uri seq }
 
 type IStorageService =
     abstract Upload: IFormFileCollection -> CancellationToken -> Async<UploadResult>
@@ -20,14 +18,16 @@ type StorageService (logger: ILogger<StorageService>, config: IConfiguration, bl
     let _blobServiceClient = blobServiceClient
     let _blobContainer = config["AzureBlob_Container_Name"]
 
-    let _Upload (file: IFormFile) token =
+    let _Upload (file: IFormFile) (token: CancellationToken) =
         async {
-            let filename  = Guid.NewGuid().ToString()
-            let containerClient = _blobServiceClient.GetBlobContainerClient(_blobContainer)
-            let blobClient = containerClient.GetBlobClient(filename)
+            token.ThrowIfCancellationRequested ()
 
-            use stream = file.OpenReadStream()
-            let! _ = blobClient.UploadAsync(stream, true, token) |> Async.AwaitTask
+            let filename  = Guid.NewGuid().ToString()
+            let containerClient = _blobServiceClient.GetBlobContainerClient _blobContainer
+            let blobClient = containerClient.GetBlobClient filename
+
+            use stream = file.OpenReadStream ()
+            let! _ = blobClient.UploadAsync (stream, true, token) |> Async.AwaitTask
 
             return blobClient.Uri
         }
