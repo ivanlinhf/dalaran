@@ -18,9 +18,12 @@ module Program =
         let builder = WebApplication.CreateBuilder args
 
         builder.AddServiceDefaults () |> ignore
+
+        builder.AddAzureBlobClient ("AzureBlob") |> ignore
         builder.AddAzureOpenAIClient(
             "OpenAI",
             fun cs -> cs.Key <- builder.Configuration["OpenAI_Api_Key"])
+
         builder.Services.AddSingleton<WebSearchEnginePlugin>(
             fun _ ->
                 let apiKey = builder.Configuration["Bing_Api_Key"]
@@ -44,7 +47,10 @@ module Program =
         builder.Services.AddAzureOpenAIChatCompletion(
             builder.Configuration["OpenAI_Deployment_Name"]
         ) |> ignore
+
         builder.Services.AddTransient<ILlmService, LlmService> () |> ignore
+        builder.Services.AddTransient<IStorageService, StorageService> () |> ignore
+
         builder.Services.AddControllers () |> ignore
         builder.Services.AddOpenApi () |> ignore
 

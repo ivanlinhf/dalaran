@@ -1,17 +1,16 @@
 ﻿namespace Dalaran.Server.Controllers
 
-open System.ComponentModel.DataAnnotations
 open System.Threading
 
+open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Mvc
 open Microsoft.Extensions.Logging
-open Microsoft.SemanticKernel
 
 open Dalaran.Server.Services
 
 [<ApiController>]
 [<Route("[controller]")>]
-type LlmController (logger : ILogger<LlmController>, service: ILlmService) =
+type StorageController (logger: ILogger<StorageController>, service: IStorageService) =
     inherit ControllerBase ()
 
     let _logger = logger
@@ -19,5 +18,5 @@ type LlmController (logger : ILogger<LlmController>, service: ILlmService) =
 
     [<HttpPost>]
     [<Route("[action]")>]
-    member _.Chat ([<Required>] contents: KernelContent seq, token: CancellationToken) =
-        _service.Chat contents token
+    member _.Upload (files: IFormFileCollection, token: CancellationToken) =
+        _service.Upload files token

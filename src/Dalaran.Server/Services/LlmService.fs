@@ -3,19 +3,20 @@
 open System.Collections.Generic
 open System.Threading
 
+open Microsoft.Extensions.Logging
 open Microsoft.SemanticKernel
 open Microsoft.SemanticKernel.ChatCompletion
 
 type ILlmService =
-    abstract Chat: contents: KernelContent seq * token: CancellationToken -> IAsyncEnumerable<StreamingChatMessageContent>
+    abstract Chat: KernelContent seq -> CancellationToken -> IAsyncEnumerable<StreamingChatMessageContent>
 
-type LlmService (chatCompletion: IChatCompletionService, kernel: Kernel) =
-
+type LlmService (logger: ILogger<LlmService>, chatCompletion: IChatCompletionService, kernel: Kernel) =
+    let _logger = logger
     let _chatCompletion = chatCompletion
     let _kernel = kernel
 
     interface ILlmService with
-        member _.Chat (contents, token) =
+        member _.Chat contents token =
             let itemCollection = ChatMessageContentItemCollection ()
             contents |> Seq.iter (fun x -> itemCollection.Add x)
 
