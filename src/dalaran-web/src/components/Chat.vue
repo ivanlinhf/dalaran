@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import type { Ref } from 'vue'
 
-const toolTipText: Ref<string> = ref('Ask me anything...')
+const toolTipText: Ref<string> = ref('')
 const inputText: Ref<string | null> = ref('')
 </script>
 

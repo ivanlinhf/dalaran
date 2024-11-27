@@ -26,6 +26,7 @@ builder.AddNpmApp("web", "../dalaran-web")
     .WithReference(server)
     .WaitFor(server)
     .WithEnvironment("BROWSER", "none")
+    .WithEnvironment("VITE_SERVER_URL", server.GetEndpoint("http"))
     .WithHttpEndpoint(targetPort: 5173)
     .WithExternalHttpEndpoints();
 

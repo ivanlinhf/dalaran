@@ -3,6 +3,7 @@ namespace Dalaran.Server
 open Microsoft.AspNetCore.Builder
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
+open Microsoft.Net.Http.Headers
 open Microsoft.SemanticKernel
 open Microsoft.SemanticKernel.Plugins.Web
 open Microsoft.SemanticKernel.Plugins.Web.Bing
@@ -54,11 +55,25 @@ module Program =
         builder.Services.AddControllers () |> ignore
         builder.Services.AddOpenApi () |> ignore
 
+        builder.Services.AddCors(fun o ->
+            o.AddPolicy("AllowAll", fun b ->
+                b.AllowAnyMethod()
+                 .SetIsOriginAllowed(fun _ -> true)
+                 .WithHeaders(HeaderNames.ContentType, "Access-Control-Allow-Origin")
+                 .AllowAnyHeader()
+                 .AllowAnyOrigin()
+                 |> ignore
+                ) |> ignore
+            ) |> ignore
+
         let app = builder.Build ()
 
         app.MapDefaultEndpoints () |> ignore
         app.MapControllers () |> ignore
         app.MapOpenApi () |> ignore
+
+        app.UseCors("AllowAll") |> ignore
+
         app.Run ()
 
         exitCode

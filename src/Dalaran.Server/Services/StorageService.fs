@@ -35,9 +35,10 @@ type StorageService (logger: ILogger<StorageService>, config: IConfiguration, bl
     interface IStorageService with
         member _.Upload files token =
             async {
-                let! uris = files
-                            |> Seq.map (fun file -> _Upload file token)
-                            |> Async.Sequential
+                let! uris =
+                    files
+                    |> Seq.map (fun file -> _Upload file token)
+                    |> Async.Sequential
 
                 return { Uris = uris }
             }
