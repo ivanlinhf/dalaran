@@ -1,15 +1,30 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { Ref } from 'vue'
+import { chat } from '@/api/llm'
+import { ContentType } from '@/types/content'
 
 const toolTipText: Ref<string> = ref('')
 const inputText: Ref<string | null> = ref('')
+const responseText: Ref<string> = ref('')
+
+async function sendMessage() {
+  if (inputText.value) {
+    responseText.value = ''
+
+    await chat(
+      [{ $type: ContentType.Text, text: inputText.value }],
+      (x) => (responseText.value += x),
+    )
+    inputText.value = ''
+  }
+}
 </script>
 
 <template>
   <div class="container">
     <div class="message-container">
-      <h3>{{ inputText }}</h3>
+      <div class="text-body1">{{ responseText }}</div>
     </div>
     <div class="tooltip-container">
       <div class="text-body1">{{ toolTipText }}</div>
@@ -38,7 +53,7 @@ const inputText: Ref<string | null> = ref('')
           </q-btn>
         </template>
         <template #after>
-          <q-btn flat icon="send">
+          <q-btn flat icon="send" :disable="!inputText" @click="sendMessage">
             <q-tooltip class="text-body2">Send message</q-tooltip>
           </q-btn>
         </template>
