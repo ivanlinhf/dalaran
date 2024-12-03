@@ -1,34 +1,44 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 import type { Ref } from 'vue'
+import { ref } from 'vue'
 import { chat } from '@/api/llm'
+import { AuthorRole } from '@/types/authorRole.ts'
+import type { ChatMessage } from '@/types/chatMessage.ts'
 import { ContentType } from '@/types/content'
 
-const toolTipText: Ref<string> = ref('')
 const inputText: Ref<string | null> = ref('')
-const responseText: Ref<string> = ref('')
+const chatMessages: Ref<ChatMessage[]> = ref<ChatMessage[]>([])
 
 async function sendMessage() {
   if (inputText.value) {
-    responseText.value = ''
-
-    await chat(
-      [{ $type: ContentType.Text, text: inputText.value }],
-      (x) => (responseText.value += x),
-    )
+    const text = inputText.value
     inputText.value = ''
+
+    chatMessages.value.push({ author: AuthorRole.User, text: text })
+
+    chatMessages.value.push({ author: AuthorRole.Assistant, text: '' })
+    const responseMessage = chatMessages.value[chatMessages.value.length - 1]
+    await chat([{ $type: ContentType.Text, text: text }], (x) => {
+      responseMessage.text += x
+    })
   }
 }
 </script>
 
 <template>
   <div class="container">
-    <div class="message-container">
-      <div class="text-body1">{{ responseText }}</div>
-    </div>
-    <div class="tooltip-container">
-      <div class="text-body1">{{ toolTipText }}</div>
-    </div>
+    <q-scroll-area class="message-container">
+      <q-chat-message
+        v-for="(chatMessage, index) in chatMessages"
+        :key="index"
+        :sent="chatMessage.author == AuthorRole.User"
+        :text="[chatMessage.text]"
+      >
+        <template v-if="!chatMessage.text" v-slot:default
+          ><q-spinner-dots v-if="!chatMessage.text"
+        /></template>
+      </q-chat-message>
+    </q-scroll-area>
     <div class="input-container">
       <q-input
         class="input"
@@ -53,7 +63,7 @@ async function sendMessage() {
           </q-btn>
         </template>
         <template #after>
-          <q-btn flat icon="send" :disable="!inputText" @click="sendMessage">
+          <q-btn flat icon="send" :disable="!inputText?.trim()" @click="sendMessage">
             <q-tooltip class="text-body2">Send message</q-tooltip>
           </q-btn>
         </template>
@@ -65,6 +75,7 @@ async function sendMessage() {
 <style lang="scss" scoped>
 div {
   margin: auto;
+  white-space: pre-wrap;
 }
 
 .container {
@@ -75,11 +86,7 @@ div {
 .message-container {
   height: 80%;
   width: 60%;
-}
-
-.tooltip-container {
-  height: 5%;
-  width: 40%;
+  margin-top: 5%;
 }
 
 .input-container {
