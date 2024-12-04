@@ -9,10 +9,7 @@ open Microsoft.Azure.Cosmos
 open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.Logging
 
-type UploadResult = { Uris: Uri seq }
-
-type IStorageService =
-    abstract Upload: IFormFileCollection -> CancellationToken -> Async<UploadResult>
+open Dalaran.Server.Models
 
 type StorageService (
     logger: ILogger<StorageService>,

@@ -1,8 +1,6 @@
 ﻿namespace Dalaran.Server.Services
 
 open System
-open System.Collections.Generic
-open System.Threading
 
 open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.Logging
@@ -12,13 +10,7 @@ open Microsoft.SemanticKernel.ChatCompletion
 open Azure.Storage.Blobs
 open FSharp.Control
 
-type StreamingChatResponse = {
-    Content: string
-    IsFinished: bool
-}
-
-type ILlmService =
-    abstract Chat: KernelContent seq -> CancellationToken -> IAsyncEnumerable<StreamingChatResponse>
+open Dalaran.Server.Models
 
 module LlmHelper =
     let AppendSAS (uri: Uri) (targetUri: Uri) sas =
