@@ -5,6 +5,7 @@ open System.Threading
 
 open Azure.Storage.Blobs
 open Microsoft.AspNetCore.Http
+open Microsoft.Azure.Cosmos
 open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.Logging
 
@@ -13,10 +14,18 @@ type UploadResult = { Uris: Uri seq }
 type IStorageService =
     abstract Upload: IFormFileCollection -> CancellationToken -> Async<UploadResult>
 
-type StorageService (logger: ILogger<StorageService>, config: IConfiguration, blobServiceClient: BlobServiceClient) =
+type StorageService (
+    logger: ILogger<StorageService>,
+    config: IConfiguration,
+    blobServiceClient: BlobServiceClient,
+    cosmosClient: CosmosClient) =
+
     let _logger = logger
     let _blobServiceClient = blobServiceClient
     let _blobContainer = config["AzureBlob_Container_Name"]
+    let _cosmosClient = cosmosClient
+    let _cosmosDatabase = config["AzureCosmos_Database_Name"]
+    let _cosmosContainer = config["AzureCosmos_Container_Name"]
 
     let _Upload (file: IFormFile) (token: CancellationToken) =
         async {

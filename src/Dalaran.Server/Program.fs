@@ -21,6 +21,7 @@ module Program =
         builder.AddServiceDefaults () |> ignore
 
         builder.AddAzureBlobClient ("AzureBlob") |> ignore
+        builder.AddAzureCosmosClient ("AzureCosmos") |> ignore
         builder.AddAzureOpenAIClient(
             "OpenAI",
             fun cs -> cs.Key <- builder.Configuration["OpenAI_Api_Key"])

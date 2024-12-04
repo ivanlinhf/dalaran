@@ -6,6 +6,10 @@ var azureBlobConn = builder.AddConnectionString("AzureBlob");
 var azureBlobContainer = builder.AddParameter("AzureBlob-ContainerName");
 var azureBlobContainerSAS = builder.AddParameter("AzureBlob-ContainerSAS");
 
+var azureCosmosConn = builder.AddConnectionString("AzureCosmos");
+var azureCosmosNoSqlDatabase = builder.AddParameter("AzureCosmos-DatabaseName");
+var azureCosmosNoSqlContainer = builder.AddParameter("AzureCosmos-ContainerName");
+
 var bingApiKey = builder.AddParameter("Bing-ApiKey");
 
 var openAiConn = builder.AddConnectionString("OpenAI");
@@ -17,6 +21,9 @@ var server =
         .WithReference(azureBlobConn)
         .WithEnvironment("AzureBlob_Container_Name", azureBlobContainer)
         .WithEnvironment("AzureBlob_Container_SAS", azureBlobContainerSAS)
+        .WithReference(azureCosmosConn)
+        .WithEnvironment("AzureCosmos_Database_Name", azureCosmosNoSqlDatabase)
+        .WithEnvironment("AzureCosmos_Container_Name", azureCosmosNoSqlContainer)
         .WithEnvironment("Bing_Api_Key", bingApiKey)
         .WithReference(openAiConn)
         .WithEnvironment("OpenAI_Api_Key", openAiApiKey)
