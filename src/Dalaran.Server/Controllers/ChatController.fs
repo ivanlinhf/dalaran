@@ -7,6 +7,7 @@ open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Mvc
 open Microsoft.Extensions.Logging
 open Microsoft.SemanticKernel
+open SixLabors.ImageSharp
 
 open Dalaran.Server.Services
 
@@ -36,5 +37,23 @@ type ChatController(logger: ILogger<ChatController>, service: IChatService) =
 
     [<HttpPost>]
     [<Route("{id}/images")>]
-    member _.UploadImages(id: string, [<MinLength(1)>] files: IFormFileCollection, token: CancellationToken) =
-        _service.UploadImages id files token
+    member this.UploadImages(id: string, [<MinLength(1)>] files: IFormFileCollection, token: CancellationToken) =
+        let hasError =
+            files
+            |> Seq.map (fun x ->
+                async {
+                    use stream = x.OpenReadStream()
+
+                    try
+                        let! _ = Image.DetectFormatAsync(stream, token) |> Async.AwaitTask
+                        return false
+                    with _ ->
+                        return true
+                }
+                |> Async.RunSynchronously)
+            |> Seq.contains true
+
+        if hasError then
+            this.BadRequest({| ErrorMessage = "One or more invalid image(s)." |}) :> IActionResult
+        else
+            this.Ok(_service.UploadImages id files token |> Async.RunSynchronously)
