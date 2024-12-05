@@ -19,9 +19,22 @@ type ChatController(logger: ILogger<ChatController>, service: IChatService) =
     let _service = service
 
     [<HttpPost>]
-    [<Route("[action]")>]
-    member _.Chat([<Required>] contents: KernelContent seq, token: CancellationToken) = _service.Chat contents token
+    member _.Create() = _service.Create()
 
     [<HttpPost>]
-    [<Route("[action]")>]
-    member _.Upload([<MinLength(1)>] files: IFormFileCollection, token: CancellationToken) = _service.Upload files token
+    [<Route("{id}")>]
+    member _.AddMessages(id: string, [<Required>] contents: KernelContent seq, token: CancellationToken) =
+        _service.AddMessages id contents token
+
+    [<HttpGet>]
+    [<Route("{id}")>]
+    member _.GetMessages(id: string, token: CancellationToken) = _service.GetMessages id token
+
+    [<HttpPost>]
+    [<Route("{id}/run")>]
+    member _.Run(id: string, token: CancellationToken) = _service.Run id token
+
+    [<HttpPost>]
+    [<Route("{id}/images")>]
+    member _.UploadImages(id: string, [<MinLength(1)>] files: IFormFileCollection, token: CancellationToken) =
+        _service.UploadImages id files token

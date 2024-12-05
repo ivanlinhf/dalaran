@@ -2,4 +2,4 @@
 
 open System
 
-type UploadResult = { Uris: Uri seq }
+type UploadImagesResult = { Uris: Uri seq }

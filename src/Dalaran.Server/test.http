@@ -1,11 +1,20 @@
 @Host=http://localhost:5189
+@ThreadId=123
 
 ###
 
-POST {{Host}}/chat/chat
+POST {{Host}}/chat/{{ThreadId}}
 Content-Type: application/json
 
 [{
     "$type": "TextContent",
-    "Text": "Hello world!"
+    "Text": "Hello world"
 }]
+
+###
+
+GET {{Host}}/chat/{{ThreadId}}
+
+###
+
+POST {{Host}}/chat/{{ThreadId}}/run

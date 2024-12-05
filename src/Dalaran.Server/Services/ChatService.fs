@@ -1,10 +1,10 @@
 ﻿namespace Dalaran.Server.Services
 
 open System
-open System.Threading
+open System.Linq
 
-open Microsoft.AspNetCore.Http
 open Microsoft.Azure.Cosmos
+open Microsoft.Azure.Cosmos.Linq
 open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.Logging
 open Microsoft.SemanticKernel
@@ -14,21 +14,6 @@ open Azure.Storage.Blobs
 open FSharp.Control
 
 open Dalaran.Server.Models
-
-module ChatHelper =
-    let AppendSAS (uri: Uri) (targetUri: Uri) sas =
-        if uri.Host = targetUri.Host then
-            let builder = UriBuilder uri
-            builder.Query <- sas
-            builder.Uri
-        else
-            uri
-
-    let GetChatResponse (content: StreamingChatMessageContent) =
-        let found, value = content.Metadata.TryGetValue "FinishReason"
-
-        { Content = content.Content
-          IsFinished = found && value = "Stop" }
 
 type ChatService
     (
@@ -50,51 +35,93 @@ type ChatService
     let _cosmosDatabase = config["AzureCosmos_Database_Name"]
     let _cosmosContainer = config["AzureCosmos_Container_Name"]
 
-    let _Upload (file: IFormFile) (token: CancellationToken) =
-        async {
-            token.ThrowIfCancellationRequested()
-
-            let filename = Guid.NewGuid().ToString()
-            let containerClient = _blobServiceClient.GetBlobContainerClient _blobContainer
-            let blobClient = containerClient.GetBlobClient filename
-
-            use stream = file.OpenReadStream()
-            let! _ = blobClient.UploadAsync(stream, true, token) |> Async.AwaitTask
-
-            return blobClient.Uri
-        }
-
     interface IChatService with
-        member _.Chat contents token =
-            let itemCollection = ChatMessageContentItemCollection()
+        member _.Create() : ChatMeta =
+            { ThreadId = Guid.NewGuid().ToString() }
 
-            contents
-            |> Seq.map (fun x ->
-                match x with
-                | :? ImageContent as image ->
-                    image.Uri <- ChatHelper.AppendSAS image.Uri _blobServiceClient.Uri _blobContainerSAS
-                    image :> KernelContent
-                | _ -> x)
-            |> Seq.iter (itemCollection.Add)
+        member _.AddMessages id contents token =
+            async {
+                let itemCollection = ChatMessageContentItemCollection()
+                contents |> Seq.iter (itemCollection.Add)
+                let messageContent = ChatMessageContent(AuthorRole.User, itemCollection)
 
-            let messageContent = ChatMessageContent(AuthorRole.User, itemCollection)
-            let history = ChatHistory [ messageContent ]
+                let message: ChatMessage =
+                    { Id = Guid.NewGuid().ToString()
+                      ThreadId = id
+                      Content = messageContent
+                      Timestamp = DateTime.UtcNow }
+
+                let container = _cosmosClient.GetContainer(_cosmosDatabase, _cosmosContainer)
+
+                let! _ =
+                    container.CreateItemAsync<ChatMessage>(
+                        message,
+                        new PartitionKey(message.ThreadId),
+                        cancellationToken = token
+                    )
+                    |> Async.AwaitTask
+
+                return ()
+            }
+
+        member _.GetMessages id token =
+            async {
+                let container = _cosmosClient.GetContainer(_cosmosDatabase, _cosmosContainer)
+
+                let query =
+                    container.GetItemLinqQueryable<ChatMessage>().Where(fun x -> x.ThreadId = id).OrderBy(_.Timestamp)
+
+                use iterator = query.ToFeedIterator()
+
+                return!
+                    taskSeq {
+                        while iterator.HasMoreResults do
+                            let! resp = iterator.ReadNextAsync(token)
+                            yield! resp
+                    }
+                    |> TaskSeq.toListAsync
+                    |> Async.AwaitTask
+            }
+
+        member this.Run id token =
+            let messages =
+                async { return! (this :> IChatService).GetMessages id token }
+                |> Async.RunSynchronously
+
+            let history = ChatHistory(messages |> List.map (_.Content))
 
             let executionSettings =
                 PromptExecutionSettings(FunctionChoiceBehavior = FunctionChoiceBehavior.Auto())
 
             _chatCompletion.GetStreamingChatMessageContentsAsync(history, executionSettings, _kernel, token)
             |> TaskSeq.choose (fun x ->
-                let resp = ChatHelper.GetChatResponse x
+                let found, value = x.Metadata.TryGetValue "FinishReason"
+
+                let resp =
+                    { Content = x.Content
+                      IsFinished = found && value = "Stop" }
 
                 if not (String.IsNullOrEmpty resp.Content) || resp.IsFinished then
                     Some resp
                 else
                     None)
 
-        member _.Upload files token =
+        member _.UploadImages id files token =
             async {
-                let! uris = files |> Seq.map (fun file -> _Upload file token) |> Async.Sequential
+                let! uris =
+                    files
+                    |> Seq.map (fun x ->
+                        async {
+                            let filename = sprintf "%s_%s" id x.FileName
+                            let containerClient = _blobServiceClient.GetBlobContainerClient _blobContainer
+                            let blobClient = containerClient.GetBlobClient filename
+
+                            use stream = x.OpenReadStream()
+                            let! _ = blobClient.UploadAsync(stream, true, token) |> Async.AwaitTask
+
+                            return blobClient.Uri
+                        })
+                    |> Async.Sequential
 
                 return { Uris = uris }
             }

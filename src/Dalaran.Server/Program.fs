@@ -1,5 +1,7 @@
 namespace Dalaran.Server
 
+open System.Text.Json
+
 open Microsoft.AspNetCore.Builder
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
@@ -21,7 +23,13 @@ module Program =
         builder.AddServiceDefaults() |> ignore
 
         builder.AddAzureBlobClient("AzureBlob") |> ignore
-        builder.AddAzureCosmosClient("AzureCosmos") |> ignore
+
+        builder.AddAzureCosmosClient(
+            "AzureCosmos",
+            configureClientOptions = fun x -> x.UseSystemTextJsonSerializerWithOptions <- JsonSerializerOptions()
+        )
+        |> ignore
+
         builder.AddAzureOpenAIClient("OpenAI", fun cs -> cs.Key <- builder.Configuration["OpenAI_Api_Key"])
 
         builder.Services.AddSingleton<WebSearchEnginePlugin>(fun _ ->

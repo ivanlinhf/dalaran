@@ -6,8 +6,10 @@
 
     <ItemGroup>
         <None Include="test.http" />
+        <Compile Include="Models\ChatMessage.fs" />
+        <Compile Include="Models\ChatMeta.fs" />
         <Compile Include="Models\StreamingChatResponse.fs" />
-        <Compile Include="Models\UploadResult.fs" />
+        <Compile Include="Models\UploadImagesResult.fs" />
         <Compile Include="Services\IChatService.fs" />
         <Compile Include="Services\ChatService.fs" />
         <Compile Include="Controllers\ChatController.fs" />

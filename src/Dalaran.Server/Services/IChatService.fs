@@ -9,5 +9,8 @@ open Microsoft.SemanticKernel
 open Dalaran.Server.Models
 
 type IChatService =
-    abstract Chat: KernelContent seq -> CancellationToken -> IAsyncEnumerable<StreamingChatResponse>
-    abstract Upload: IFormFileCollection -> CancellationToken -> Async<UploadResult>
+    abstract Create: unit -> ChatMeta
+    abstract AddMessages: string -> KernelContent seq -> CancellationToken -> Async<unit>
+    abstract GetMessages: string -> CancellationToken -> Async<ChatMessage list>
+    abstract Run: string -> CancellationToken -> IAsyncEnumerable<StreamingChatResponse>
+    abstract UploadImages: string -> IFormFileCollection -> CancellationToken -> Async<UploadImagesResult>
