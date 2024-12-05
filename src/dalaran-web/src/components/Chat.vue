@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Ref } from 'vue'
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { addMessages, create, run } from '@/api/chat'
 import { AuthorRole } from '@/types/authorRole'
 import type { ChatMessage } from '@/types/chatMessage'
@@ -10,21 +10,25 @@ const threadId: Ref<string> = ref('')
 const inputText: Ref<string | null> = ref('')
 const chatMessages: Ref<ChatMessage[]> = ref<ChatMessage[]>([])
 
+const inputTextEnabled = computed(() => !!threadId.value)
+const uploadButtonEnabled = computed(() => !!threadId.value)
+const sendButtonEnabled = computed(
+  () => threadId.value && inputText.value && inputText.value.trim(),
+)
+
 async function sendMessage() {
-  if (inputText.value) {
-    const text = inputText.value
+  const text = inputText.value!
 
-    await addMessages(threadId.value, [{ $type: ContentType.Text, text: text }])
-    inputText.value = ''
+  await addMessages(threadId.value, [{ $type: ContentType.Text, text: text }])
+  inputText.value = ''
 
-    chatMessages.value.push({ author: AuthorRole.User, text: text })
-    chatMessages.value.push({ author: AuthorRole.Assistant, text: '' })
+  chatMessages.value.push({ author: AuthorRole.User, text: text })
+  chatMessages.value.push({ author: AuthorRole.Assistant, text: '' })
 
-    const responseMessage = chatMessages.value[chatMessages.value.length - 1]
-    await run(threadId.value, (x) => {
-      responseMessage.text += x
-    })
-  }
+  const responseMessage = chatMessages.value[chatMessages.value.length - 1]
+  await run(threadId.value, (x) => {
+    responseMessage.text += x
+  })
 }
 
 onMounted(async () => {
@@ -56,6 +60,7 @@ onMounted(async () => {
         clear-icon="close"
         autogrow
         v-model="inputText"
+        :readonly="!inputTextEnabled"
       >
         <template #before>
           <q-btn flat icon="add">
@@ -66,12 +71,12 @@ onMounted(async () => {
           <q-btn flat icon="zoom_out_map">
             <q-tooltip class="text-body2">Zoom in</q-tooltip>
           </q-btn>
-          <q-btn flat icon="image">
+          <q-btn flat icon="image" :disable="!uploadButtonEnabled">
             <q-tooltip class="text-body2">Upload images</q-tooltip>
           </q-btn>
         </template>
         <template #after>
-          <q-btn flat icon="send" :disable="!inputText?.trim()" @click="sendMessage">
+          <q-btn flat icon="send" :disable="!sendButtonEnabled" @click="sendMessage">
             <q-tooltip class="text-body2">Send message</q-tooltip>
           </q-btn>
         </template>
