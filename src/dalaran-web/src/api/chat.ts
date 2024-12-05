@@ -1,12 +1,30 @@
 import { HOST } from '@/api/host'
+import type { ChatMeta } from '@/types/chatMeta.ts'
 import type { StreamingChatResponse } from '@/types/chatResponse'
 import type { TextContent, ImageContent } from '@/types/content'
 
-export async function chat(
-  data: (TextContent | ImageContent)[],
-  callback: (text: string) => void,
-): Promise<void> {
-  const path = 'llm/chat'
+export async function create(): Promise<ChatMeta> {
+  const path = 'chat'
+  const url = new URL(path, HOST)
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    return (await response.json()) as ChatMeta
+  } catch (error) {
+    console.error('Error:', error)
+    throw error
+  }
+}
+
+export async function addMessages(id: string, data: (TextContent | ImageContent)[]): Promise<void> {
+  const path = `chat/{id}`
   const url = new URL(path, HOST)
 
   try {
@@ -16,6 +34,24 @@ export async function chat(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(data),
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+  } catch (error) {
+    console.error('Error:', error)
+    throw error
+  }
+}
+
+export async function run(id: string, callback: (text: string) => void): Promise<void> {
+  const path = `chat/{id}/run`
+  const url = new URL(path, HOST)
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
     })
 
     if (!response.ok) {

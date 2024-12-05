@@ -1,28 +1,36 @@
 <script setup lang="ts">
 import type { Ref } from 'vue'
-import { ref } from 'vue'
-import { chat } from '@/api/llm'
-import { AuthorRole } from '@/types/authorRole.ts'
-import type { ChatMessage } from '@/types/chatMessage.ts'
+import { onMounted, ref } from 'vue'
+import { addMessages, create, run } from '@/api/chat'
+import { AuthorRole } from '@/types/authorRole'
+import type { ChatMessage } from '@/types/chatMessage'
 import { ContentType } from '@/types/content'
 
+const threadId: Ref<string> = ref('')
 const inputText: Ref<string | null> = ref('')
 const chatMessages: Ref<ChatMessage[]> = ref<ChatMessage[]>([])
 
 async function sendMessage() {
   if (inputText.value) {
     const text = inputText.value
+
+    await addMessages(threadId.value, [{ $type: ContentType.Text, text: text }])
     inputText.value = ''
 
     chatMessages.value.push({ author: AuthorRole.User, text: text })
-
     chatMessages.value.push({ author: AuthorRole.Assistant, text: '' })
+
     const responseMessage = chatMessages.value[chatMessages.value.length - 1]
-    await chat([{ $type: ContentType.Text, text: text }], (x) => {
+    await run(threadId.value, (x) => {
       responseMessage.text += x
     })
   }
 }
+
+onMounted(async () => {
+  const meta = await create()
+  threadId.value = meta.threadId
+})
 </script>
 
 <template>
