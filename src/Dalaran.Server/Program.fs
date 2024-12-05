@@ -50,8 +50,7 @@ module Program =
             builder.Configuration["OpenAI_Deployment_Name"]
         ) |> ignore
 
-        builder.Services.AddTransient<ILlmService, LlmService> () |> ignore
-        builder.Services.AddTransient<IStorageService, StorageService> () |> ignore
+        builder.Services.AddTransient<IChatService, ChatService> () |> ignore
 
         builder.Services.AddControllers () |> ignore
         builder.Services.AddOpenApi () |> ignore

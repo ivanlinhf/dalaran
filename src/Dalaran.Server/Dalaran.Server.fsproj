@@ -8,12 +8,9 @@
         <None Include="test.http" />
         <Compile Include="Models\StreamingChatResponse.fs" />
         <Compile Include="Models\UploadResult.fs" />
-        <Compile Include="Services\ILlmService.fs" />
-        <Compile Include="Services\IStorageService.fs" />
-        <Compile Include="Services\LlmService.fs" />
-        <Compile Include="Services\StorageService.fs" />
-        <Compile Include="Controllers\LlmController.fs" />
-        <Compile Include="Controllers\StorageController.fs" />
+        <Compile Include="Services\IChatService.fs" />
+        <Compile Include="Services\ChatService.fs" />
+        <Compile Include="Controllers\ChatController.fs" />
         <Compile Include="Program.fs" />
     </ItemGroup>
 

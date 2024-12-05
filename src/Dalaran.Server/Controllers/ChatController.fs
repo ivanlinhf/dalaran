@@ -6,16 +6,22 @@ open System.Threading
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Mvc
 open Microsoft.Extensions.Logging
+open Microsoft.SemanticKernel
 
 open Dalaran.Server.Services
 
 [<ApiController>]
 [<Route("[controller]")>]
-type StorageController (logger: ILogger<StorageController>, service: IStorageService) =
+type LlmController (logger : ILogger<LlmController>, service: IChatService) =
     inherit ControllerBase ()
 
     let _logger = logger
     let _service = service
+
+    [<HttpPost>]
+    [<Route("[action]")>]
+    member _.Chat ([<Required>] contents: KernelContent seq, token: CancellationToken) =
+        _service.Chat contents token
 
     [<HttpPost>]
     [<Route("[action]")>]
