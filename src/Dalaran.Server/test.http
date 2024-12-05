@@ -7,8 +7,17 @@ POST {{Host}}/chat/{{ThreadId}}
 Content-Type: application/json
 
 [{
+  "role": { "label": "User" },
+  "items": [{
     "$type": "TextContent",
-    "Text": "Hello world"
+    "Text": "Hello!"
+  }]
+},{
+  "role": { "label": "Assistant" },
+  "items": [{
+    "$type": "TextContent",
+    "Text": "Hello, what can I do for you?"
+  }]
 }]
 
 ###

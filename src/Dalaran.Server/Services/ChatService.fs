@@ -40,29 +40,27 @@ type ChatService
             { ThreadId = Guid.NewGuid().ToString() }
 
         member _.AddMessages id contents token =
-            async {
-                let itemCollection = ChatMessageContentItemCollection()
-                contents |> Seq.iter (itemCollection.Add)
-                let messageContent = ChatMessageContent(AuthorRole.User, itemCollection)
+            contents
+            |> Seq.map (fun x ->
+                async {
+                    let message: ChatMessage =
+                        { Id = Guid.NewGuid().ToString()
+                          ThreadId = id
+                          Content = x
+                          Timestamp = DateTime.UtcNow }
 
-                let message: ChatMessage =
-                    { Id = Guid.NewGuid().ToString()
-                      ThreadId = id
-                      Content = messageContent
-                      Timestamp = DateTime.UtcNow }
+                    let container = _cosmosClient.GetContainer(_cosmosDatabase, _cosmosContainer)
 
-                let container = _cosmosClient.GetContainer(_cosmosDatabase, _cosmosContainer)
-
-                let! _ =
-                    container.CreateItemAsync<ChatMessage>(
-                        message,
-                        new PartitionKey(message.ThreadId),
-                        cancellationToken = token
-                    )
-                    |> Async.AwaitTask
-
-                return ()
-            }
+                    return!
+                        container.CreateItemAsync<ChatMessage>(
+                            message,
+                            new PartitionKey(message.ThreadId),
+                            cancellationToken = token
+                        )
+                        |> Async.AwaitTask
+                })
+            |> Async.Sequential
+            |> Async.ignore
 
         member _.GetMessages id token =
             async {

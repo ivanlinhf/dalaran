@@ -24,7 +24,7 @@ type ChatController(logger: ILogger<ChatController>, service: IChatService) =
 
     [<HttpPost>]
     [<Route("{id}")>]
-    member _.AddMessages(id: string, [<Required>] contents: KernelContent seq, token: CancellationToken) =
+    member _.AddMessages(id: string, [<Required>] contents: ChatMessageContent seq, token: CancellationToken) =
         _service.AddMessages id contents token
 
     [<HttpGet>]
