@@ -12,3 +12,8 @@ export type ImageContent = {
   $type: ContentType.Image
   Uri: string
 }
+
+export type ChatMessageContent = {
+  role: { label: 'system' | 'assistant' | 'user' | 'tool' }
+  items: (TextContent | ImageContent)[]
+}

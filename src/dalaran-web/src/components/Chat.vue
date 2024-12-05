@@ -5,6 +5,7 @@ import { addMessages, create, run } from '@/api/chat'
 import { AuthorRole } from '@/types/authorRole'
 import type { ChatMessage } from '@/types/chatMessage'
 import { ContentType } from '@/types/content'
+import type { ChatMessageContent } from '@/types/content'
 
 const threadId: Ref<string> = ref('')
 const inputText: Ref<string | null> = ref('')
@@ -16,19 +17,38 @@ const sendButtonEnabled = computed(
   () => threadId.value && inputText.value && inputText.value.trim(),
 )
 
+let responseContent: ChatMessageContent | null = null
+
 async function sendMessage() {
   const text = inputText.value!
 
-  await addMessages(threadId.value, [{ $type: ContentType.Text, text: text }])
+  // Add last response and input text.
+  const content: ChatMessageContent = {
+    role: { label: 'user' },
+    items: [{ $type: ContentType.Text, text: text }],
+  }
+  const contents = responseContent ? [responseContent, content] : [content]
+  await addMessages(threadId.value, contents)
+
+  // Clear last response and input text.
+  responseContent = null
   inputText.value = ''
 
+  // Add input text to chat component.
   chatMessages.value.push({ author: AuthorRole.User, text: text })
   chatMessages.value.push({ author: AuthorRole.Assistant, text: '' })
 
+  // Get response.
   const responseMessage = chatMessages.value[chatMessages.value.length - 1]
   await run(threadId.value, (x) => {
     responseMessage.text += x
   })
+
+  // Store response.
+  responseContent = {
+    role: { label: 'assistant' },
+    items: [{ $type: ContentType.Text, text: responseMessage.text }],
+  }
 }
 
 onMounted(async () => {
