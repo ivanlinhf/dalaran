@@ -2,7 +2,7 @@
 
 ###
 
-POST {{Host}}/llm/chat
+POST {{Host}}/chat/chat
 Content-Type: application/json
 
 [{

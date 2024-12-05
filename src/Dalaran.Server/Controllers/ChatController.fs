@@ -12,7 +12,7 @@ open Dalaran.Server.Services
 
 [<ApiController>]
 [<Route("[controller]")>]
-type LlmController (logger : ILogger<LlmController>, service: IChatService) =
+type ChatController (logger : ILogger<ChatController>, service: IChatService) =
     inherit ControllerBase ()
 
     let _logger = logger
