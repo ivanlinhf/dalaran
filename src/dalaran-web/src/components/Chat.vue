@@ -121,11 +121,9 @@ watch(
         :bg-color="chatMessage.author == AuthorRole.User ? 'green-3' : 'grey-3'"
         :avatar="chatMessage.author == AuthorRole.User ? 'question.png' : 'answer.png'"
       >
-        <template v-if="!chatMessage.text" v-slot:default>
-          <q-spinner-dots v-if="!chatMessage.text" />
-        </template>
         <template v-slot:stamp>
-          <q-btn flat round size="xs" icon="content_copy" @click="copyText(chatMessage.text)" />
+          <q-spinner-dots v-if="isLoading && index == chatMessages.length - 1" size="md" />
+          <q-btn v-else flat round size="xs" icon="content_copy" @click="copyText(chatMessage.text)" />
         </template>
       </q-chat-message>
     </q-scroll-area>
