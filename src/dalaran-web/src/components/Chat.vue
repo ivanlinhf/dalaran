@@ -50,6 +50,7 @@ async function startNew() {
 
 async function sendMessage() {
   isZoom.value = false
+  isLoading.value = true
 
   if (sendButtonEnabled.value) {
     const text = inputText.value!
@@ -87,6 +88,8 @@ async function sendMessage() {
       items: [{ $type: ContentType.Text, text: responseMessage.text }],
     }
   }
+
+  isLoading.value = false
 }
 
 onMounted(async () => {
@@ -97,7 +100,7 @@ watch(
   chatMessages,
   () => {
     if (chatScroll.value) {
-      chatScroll.value.setScrollPercentage('vertical', 1.0, 100)
+      chatScroll.value.setScrollPercentage('vertical', 1.0)
     }
   },
   { deep: true },
@@ -113,13 +116,14 @@ watch(
         :key="index"
         :sent="chatMessage.author == AuthorRole.User"
         :text="[chatMessage.text]"
+        :bg-color="chatMessage.author == AuthorRole.User ? 'green-3' : 'grey-3'"
       >
         <template v-if="!chatMessage.text" v-slot:default
           ><q-spinner-dots v-if="!chatMessage.text"
         /></template>
       </q-chat-message>
     </q-scroll-area>
-    <div class="input-container">
+    <div class="input-container q-pt-lg">
       <q-input
         class="input"
         input-class="input-height"
@@ -149,6 +153,8 @@ watch(
             <q-tooltip class="text-body2">Send message</q-tooltip>
           </q-btn>
         </template>
+
+        <q-inner-loading :showing="isLoading" color="green-3" />
       </q-input>
     </div>
     <q-dialog v-model="isZoom" backdrop-filter="blur(4px)">
