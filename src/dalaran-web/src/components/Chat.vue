@@ -20,7 +20,8 @@ const chatMessages: Ref<ChatMessage[]> = ref<ChatMessage[]>([])
 const isLoading = ref(false)
 const isZoom = ref(false)
 
-const sendButtonEnabled = computed(() => inputText.value && inputText.value.trim())
+const isInputTextValid = computed(() => inputText.value && inputText.value.trim())
+const sendButtonEnabled = computed(() => !isLoading.value && isInputTextValid.value)
 
 let responseContent: ChatMessageContent | null = null
 
@@ -52,7 +53,7 @@ async function sendMessage() {
   isZoom.value = false
   isLoading.value = true
 
-  if (sendButtonEnabled.value) {
+  if (isInputTextValid.value) {
     const text = inputText.value!
 
     // Add last response and input.
@@ -117,6 +118,7 @@ watch(
         :sent="chatMessage.author == AuthorRole.User"
         :text="[chatMessage.text]"
         :bg-color="chatMessage.author == AuthorRole.User ? 'green-3' : 'grey-3'"
+        :avatar="chatMessage.author == AuthorRole.User ? 'question.png' : 'answer.png'"
       >
         <template v-if="!chatMessage.text" v-slot:default
           ><q-spinner-dots v-if="!chatMessage.text"
@@ -154,7 +156,7 @@ watch(
           </q-btn>
         </template>
 
-        <q-inner-loading :showing="isLoading" color="green-3" />
+        <q-inner-loading :showing="isLoading" color="primary" />
       </q-input>
     </div>
     <q-dialog v-model="isZoom" backdrop-filter="blur(4px)">
