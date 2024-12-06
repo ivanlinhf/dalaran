@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import { QScrollArea } from 'quasar'
 import type { Ref } from 'vue'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { addMessages, create, run, uploadImages } from '@/api/chat'
 import { AuthorRole } from '@/types/authorRole'
 import type { ChatMessage } from '@/types/chatMessage'
@@ -8,16 +9,18 @@ import { ContentType } from '@/types/content'
 import type { ChatMessageContent, ImageContent } from '@/types/content'
 import { useFileDialog } from '@vueuse/core'
 
+const chatScroll = ref<QScrollArea | null>(null)
+
 const threadId: Ref<string> = ref('')
+
 const imageUrls: Ref<string[]> = ref([])
 const inputText: Ref<string | null> = ref('')
 const chatMessages: Ref<ChatMessage[]> = ref<ChatMessage[]>([])
 
-const inputTextEnabled = computed(() => !!threadId.value)
-const uploadButtonEnabled = computed(() => !!threadId.value)
-const sendButtonEnabled = computed(
-  () => threadId.value && inputText.value && inputText.value.trim(),
-)
+const isLoading = ref(false)
+const isZoom = ref(false)
+
+const sendButtonEnabled = computed(() => inputText.value && inputText.value.trim())
 
 let responseContent: ChatMessageContent | null = null
 
@@ -32,53 +35,80 @@ onImagesSelected(async (x) => {
   }
 })
 
-async function sendMessage() {
-  const text = inputText.value!
+async function startNew() {
+  isLoading.value = true
 
-  // Add last response and input.
-  const imageContents: ImageContent[] = imageUrls.value.map((x) => ({
-    $type: ContentType.Image,
-    uri: x,
-  }))
-  const content: ChatMessageContent = {
-    role: { label: 'user' },
-    items: [...imageContents, { $type: ContentType.Text, text: text }],
-  }
-  const contents = responseContent ? [responseContent, content] : [content]
-  await addMessages(threadId.value, contents)
-
-  // Clear last response and input.
-  responseContent = null
   imageUrls.value = []
   inputText.value = ''
+  chatMessages.value = []
 
-  // Add input text to chat component.
-  chatMessages.value.push({ author: AuthorRole.User, text: text })
-  chatMessages.value.push({ author: AuthorRole.Assistant, text: '' })
+  const meta = await create()
+  threadId.value = meta.threadId
 
-  // Get response.
-  const responseMessage = chatMessages.value[chatMessages.value.length - 1]
-  await run(threadId.value, (x) => {
-    responseMessage.text += x
-  })
+  isLoading.value = false
+}
 
-  // Store response.
-  responseContent = {
-    role: { label: 'assistant' },
-    items: [{ $type: ContentType.Text, text: responseMessage.text }],
+async function sendMessage() {
+  isZoom.value = false
+
+  if (sendButtonEnabled.value) {
+    const text = inputText.value!
+
+    // Add last response and input.
+    const imageContents: ImageContent[] = imageUrls.value.map((x) => ({
+      $type: ContentType.Image,
+      uri: x,
+    }))
+    const content: ChatMessageContent = {
+      role: { label: 'user' },
+      items: [...imageContents, { $type: ContentType.Text, text: text }],
+    }
+    const contents = responseContent ? [responseContent, content] : [content]
+    await addMessages(threadId.value, contents)
+
+    // Clear last response and input.
+    responseContent = null
+    imageUrls.value = []
+    inputText.value = ''
+
+    // Add input text to chat component.
+    chatMessages.value.push({ author: AuthorRole.User, text: text })
+    chatMessages.value.push({ author: AuthorRole.Assistant, text: '' })
+
+    // Get response.
+    const responseMessage = chatMessages.value[chatMessages.value.length - 1]
+    await run(threadId.value, (x) => {
+      responseMessage.text += x
+    })
+
+    // Store response.
+    responseContent = {
+      role: { label: 'assistant' },
+      items: [{ $type: ContentType.Text, text: responseMessage.text }],
+    }
   }
 }
 
 onMounted(async () => {
-  const meta = await create()
-  threadId.value = meta.threadId
+  await startNew()
 })
+
+watch(
+  chatMessages,
+  () => {
+    if (chatScroll.value) {
+      chatScroll.value.setScrollPercentage('vertical', 1.0, 100)
+    }
+  },
+  { deep: true },
+)
 </script>
 
 <template>
   <div class="container">
-    <q-scroll-area class="message-container">
+    <q-scroll-area ref="chatScroll" class="message-container">
       <q-chat-message
+        class="q-pa-lg"
         v-for="(chatMessage, index) in chatMessages"
         :key="index"
         :sent="chatMessage.author == AuthorRole.User"
@@ -98,18 +128,19 @@ onMounted(async () => {
         clear-icon="close"
         autogrow
         v-model="inputText"
-        :readonly="!inputTextEnabled"
+        :disable="isLoading || !threadId"
+        @keydown.shift.enter.prevent="sendMessage"
       >
         <template #before>
-          <q-btn flat icon="add">
+          <q-btn flat icon="add" @click="startNew">
             <q-tooltip class="text-body2">Start new conversation</q-tooltip>
           </q-btn>
         </template>
         <template #append>
-          <q-btn flat icon="zoom_out_map">
+          <q-btn flat icon="zoom_out_map" @click="() => (isZoom = true)">
             <q-tooltip class="text-body2">Zoom in</q-tooltip>
           </q-btn>
-          <q-btn flat icon="image" :disable="!uploadButtonEnabled" @click="() => openFileDialog()">
+          <q-btn flat icon="image" @click="() => openFileDialog()">
             <q-tooltip class="text-body2">Upload images</q-tooltip>
           </q-btn>
         </template>
@@ -120,10 +151,30 @@ onMounted(async () => {
         </template>
       </q-input>
     </div>
+    <q-dialog v-model="isZoom" backdrop-filter="blur(4px)">
+      <div class="zoom-container">
+        <q-input
+          class="input"
+          standout
+          dark
+          autogrow
+          autofocus
+          clearable
+          clear-icon="close"
+          v-model="inputText"
+          @keydown.shift.enter.prevent="sendMessage"
+        >
+        </q-input>
+      </div>
+    </q-dialog>
   </div>
 </template>
 
 <style lang="scss" scoped>
+* {
+  font-size: large;
+}
+
 div {
   margin: auto;
   white-space: pre-wrap;
@@ -161,5 +212,11 @@ div {
 
 :deep(.input-height) {
   max-height: 15vh;
+}
+
+.zoom-container {
+  height: auto;
+  width: 100%;
+  max-height: 80vh;
 }
 </style>
