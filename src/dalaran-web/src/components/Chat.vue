@@ -7,7 +7,7 @@ import { AuthorRole } from '@/types/authorRole'
 import type { ChatMessage } from '@/types/chatMessage'
 import { ContentType } from '@/types/content'
 import type { ChatMessageContent, ImageContent } from '@/types/content'
-import { useFileDialog } from '@vueuse/core'
+import { useClipboard, useFileDialog } from '@vueuse/core'
 
 const chatScroll = ref<QScrollArea | null>(null)
 
@@ -25,6 +25,7 @@ const sendButtonEnabled = computed(() => !isLoading.value && isInputTextValid.va
 
 let responseContent: ChatMessageContent | null = null
 
+const { copy: copyText } = useClipboard()
 const { open: openFileDialog, onChange: onImagesSelected } = useFileDialog({
   accept: 'image/*',
 })
@@ -120,9 +121,12 @@ watch(
         :bg-color="chatMessage.author == AuthorRole.User ? 'green-3' : 'grey-3'"
         :avatar="chatMessage.author == AuthorRole.User ? 'question.png' : 'answer.png'"
       >
-        <template v-if="!chatMessage.text" v-slot:default
-          ><q-spinner-dots v-if="!chatMessage.text"
-        /></template>
+        <template v-if="!chatMessage.text" v-slot:default>
+          <q-spinner-dots v-if="!chatMessage.text" />
+        </template>
+        <template v-slot:stamp>
+          <q-btn flat round size="xs" icon="content_copy" @click="copyText(chatMessage.text)" />
+        </template>
       </q-chat-message>
     </q-scroll-area>
     <div class="input-container q-pt-lg">
