@@ -2,6 +2,7 @@ import { HOST } from '@/api/host'
 import type { ChatMeta } from '@/types/chatMeta.ts'
 import type { StreamingChatResponse } from '@/types/chatResponse'
 import type { ChatMessageContent } from '@/types/content'
+import type { UploadImagesResult } from '@/types/uploadImagesResult'
 
 export async function create(): Promise<ChatMeta> {
   const path = 'chat'
@@ -72,6 +73,32 @@ export async function run(id: string, callback: (text: string) => void): Promise
         callback(parseStreamingChatResponses(text))
       }
     }
+  } catch (error) {
+    console.error('Error:', error)
+    throw error
+  }
+}
+
+export async function uploadImages(id: string, files: FileList): Promise<UploadImagesResult> {
+  const path = `chat/${id}/images`
+  const url = new URL(path, HOST)
+
+  try {
+    const formData = new FormData()
+    for (const file of files) {
+      formData.append('images', file)
+    }
+
+    const response = await fetch(url, {
+      method: 'POST',
+      body: formData,
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    return (await response.json()) as UploadImagesResult
   } catch (error) {
     console.error('Error:', error)
     throw error

@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import type { Ref } from 'vue'
 import { computed, onMounted, ref } from 'vue'
-import { addMessages, create, run } from '@/api/chat'
+import { addMessages, create, run, uploadImages } from '@/api/chat'
 import { AuthorRole } from '@/types/authorRole'
 import type { ChatMessage } from '@/types/chatMessage'
 import { ContentType } from '@/types/content'
-import type { ChatMessageContent } from '@/types/content'
+import type { ChatMessageContent, ImageContent } from '@/types/content'
+import { useFileDialog } from '@vueuse/core'
 
 const threadId: Ref<string> = ref('')
+const imageUrls: Ref<string[]> = ref([])
 const inputText: Ref<string | null> = ref('')
 const chatMessages: Ref<ChatMessage[]> = ref<ChatMessage[]>([])
 
@@ -19,19 +21,35 @@ const sendButtonEnabled = computed(
 
 let responseContent: ChatMessageContent | null = null
 
+const { open: openFileDialog, onChange: onImagesSelected } = useFileDialog({
+  accept: 'image/*',
+})
+
+onImagesSelected(async (x) => {
+  if (x) {
+    const result = await uploadImages(threadId.value, x)
+    imageUrls.value.push(...result.urls)
+  }
+})
+
 async function sendMessage() {
   const text = inputText.value!
 
-  // Add last response and input text.
+  // Add last response and input.
+  const imageContents: ImageContent[] = imageUrls.value.map((x) => ({
+    $type: ContentType.Image,
+    uri: x,
+  }))
   const content: ChatMessageContent = {
     role: { label: 'user' },
-    items: [{ $type: ContentType.Text, text: text }],
+    items: [...imageContents, { $type: ContentType.Text, text: text }],
   }
   const contents = responseContent ? [responseContent, content] : [content]
   await addMessages(threadId.value, contents)
 
-  // Clear last response and input text.
+  // Clear last response and input.
   responseContent = null
+  imageUrls.value = []
   inputText.value = ''
 
   // Add input text to chat component.
@@ -91,7 +109,7 @@ onMounted(async () => {
           <q-btn flat icon="zoom_out_map">
             <q-tooltip class="text-body2">Zoom in</q-tooltip>
           </q-btn>
-          <q-btn flat icon="image" :disable="!uploadButtonEnabled">
+          <q-btn flat icon="image" :disable="!uploadButtonEnabled" @click="() => openFileDialog()">
             <q-tooltip class="text-body2">Upload images</q-tooltip>
           </q-btn>
         </template>

@@ -86,6 +86,18 @@ type ChatService
                 async { return! (this :> IChatService).GetMessages id token }
                 |> Async.RunSynchronously
 
+            // Append SAS token to blob image urls.
+            messages
+            |> List.iter (fun x ->
+                x.Content.Items
+                |> Seq.iter (fun y ->
+                    match y with
+                    | :? ImageContent as image when image.Uri.Host = _blobServiceClient.Uri.Host ->
+                        let builder = UriBuilder image.Uri
+                        builder.Query <- _blobContainerSAS
+                        image.Uri <- builder.Uri
+                    | _ -> ()))
+
             let history = ChatHistory(messages |> List.map (_.Content))
 
             let executionSettings =
@@ -106,7 +118,7 @@ type ChatService
 
         member _.UploadImages id files token =
             async {
-                let! uris =
+                let! urls =
                     files
                     |> Seq.map (fun x ->
                         async {
@@ -121,5 +133,5 @@ type ChatService
                         })
                     |> Async.Sequential
 
-                return { Uris = uris }
+                return { Urls = urls }
             }

@@ -10,7 +10,7 @@ export type TextContent = {
 
 export type ImageContent = {
   $type: ContentType.Image
-  Uri: string
+  uri: string
 }
 
 export type ChatMessageContent = {

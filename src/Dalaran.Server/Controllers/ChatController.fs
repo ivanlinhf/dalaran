@@ -37,9 +37,9 @@ type ChatController(logger: ILogger<ChatController>, service: IChatService) =
 
     [<HttpPost>]
     [<Route("{id}/images")>]
-    member this.UploadImages(id: string, [<MinLength(1)>] files: IFormFileCollection, token: CancellationToken) =
+    member this.UploadImages(id: string, [<MinLength(1)>] images: IFormFileCollection, token: CancellationToken) =
         let hasError =
-            files
+            images
             |> Seq.map (fun x ->
                 async {
                     use stream = x.OpenReadStream()
@@ -56,4 +56,4 @@ type ChatController(logger: ILogger<ChatController>, service: IChatService) =
         if hasError then
             this.BadRequest({| ErrorMessage = "One or more invalid image(s)." |}) :> IActionResult
         else
-            this.Ok(_service.UploadImages id files token |> Async.RunSynchronously)
+            this.Ok(_service.UploadImages id images token |> Async.RunSynchronously)
