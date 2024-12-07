@@ -30,7 +30,6 @@ type ChatService
     let _kernel = kernel
     let _blobServiceClient = blobServiceClient
     let _blobContainer = config["AzureBlob_Container_Name"]
-    let _blobContainerSAS = config.["AzureBlob_Container_SAS"]
     let _cosmosClient = cosmosClient
     let _cosmosDatabase = config["AzureCosmos_Database_Name"]
     let _cosmosContainer = config["AzureCosmos_Container_Name"]
@@ -85,18 +84,6 @@ type ChatService
             let messages =
                 async { return! (this :> IChatService).GetMessages id token }
                 |> Async.RunSynchronously
-
-            // Append SAS token to blob image urls.
-            messages
-            |> List.iter (fun x ->
-                x.Content.Items
-                |> Seq.iter (fun y ->
-                    match y with
-                    | :? ImageContent as image when image.Uri.Host = _blobServiceClient.Uri.Host ->
-                        let builder = UriBuilder image.Uri
-                        builder.Query <- _blobContainerSAS
-                        image.Uri <- builder.Uri
-                    | _ -> ()))
 
             let history = ChatHistory(messages |> List.map (_.Content))
 
