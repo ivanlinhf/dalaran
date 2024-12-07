@@ -4,7 +4,6 @@ var builder = DistributedApplication.CreateBuilder(args);
 
 var azureBlobConn = builder.AddConnectionString("AzureBlob");
 var azureBlobContainer = builder.AddParameter("AzureBlob-ContainerName");
-var azureBlobContainerSAS = builder.AddParameter("AzureBlob-ContainerSAS");
 
 var azureCosmosConn = builder.AddConnectionString("AzureCosmos");
 var azureCosmosNoSqlDatabase = builder.AddParameter("AzureCosmos-DatabaseName");
@@ -20,7 +19,6 @@ var server =
     builder.AddProject<Dalaran_Server>("server")
         .WithReference(azureBlobConn)
         .WithEnvironment("AzureBlob_Container_Name", azureBlobContainer)
-        .WithEnvironment("AzureBlob_Container_SAS", azureBlobContainerSAS)
         .WithReference(azureCosmosConn)
         .WithEnvironment("AzureCosmos_Database_Name", azureCosmosNoSqlDatabase)
         .WithEnvironment("AzureCosmos_Container_Name", azureCosmosNoSqlContainer)
