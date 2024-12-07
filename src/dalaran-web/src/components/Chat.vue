@@ -97,9 +97,14 @@ async function sendMessage() {
     uploadedImageUrls.value = []
     inputText.value = ''
 
-    // Add input text to chat component.
-    chatMessages.value.push({ author: AuthorRole.User, text: text })
-    chatMessages.value.push({ author: AuthorRole.Assistant, text: '' })
+    // Add input to chat component.
+    chatMessages.value.push(
+      ...imageContents.map((x) => {
+        return { author: AuthorRole.User, text: x.uri, isImage: true }
+      }),
+    )
+    chatMessages.value.push({ author: AuthorRole.User, text: text, isImage: false })
+    chatMessages.value.push({ author: AuthorRole.Assistant, text: '', isImage: false })
 
     // Get response.
     const responseMessage = chatMessages.value[chatMessages.value.length - 1]
@@ -144,6 +149,9 @@ watch(
         :bg-color="chatMessage.author == AuthorRole.User ? 'green-3' : 'grey-3'"
         :avatar="chatMessage.author == AuthorRole.User ? 'question.png' : 'answer.png'"
       >
+        <template v-if="chatMessage.isImage" v-slot:default>
+          <q-img class="img-message" spinner-color="white" fit="contain" :src="chatMessage.text" />
+        </template>
         <template v-slot:stamp>
           <q-spinner-dots v-if="isLoading && index == chatMessages.length - 1" size="md" />
           <q-btn
@@ -244,7 +252,12 @@ watch(
     <q-dialog v-model="showUploaded" backdrop-filter="brightness(60%)">
       <div class="view-uploaded-container">
         <q-carousel animated v-model="carousel" arrows navigation infinite>
-          <q-carousel-slide v-for="(url, index) of uploadedImageUrls" :key="index" :name="index" :img-src="url" />
+          <q-carousel-slide
+            v-for="(url, index) of uploadedImageUrls"
+            :key="index"
+            :name="index"
+            :img-src="url"
+          />
         </q-carousel>
       </div>
     </q-dialog>
@@ -270,6 +283,11 @@ div {
   height: 80%;
   width: 60%;
   margin-top: 5%;
+}
+
+.img-message {
+  height: 15vh;
+  width: 15vw;
 }
 
 .input-container {
