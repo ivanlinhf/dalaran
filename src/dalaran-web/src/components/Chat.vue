@@ -250,15 +250,14 @@ watch(
       </q-card>
     </q-dialog>
     <q-dialog v-model="showUploaded" backdrop-filter="brightness(60%)">
-      <div class="view-uploaded-container">
-        <q-carousel animated v-model="carousel" arrows navigation infinite>
-          <q-carousel-slide
-            v-for="(url, index) of uploadedImageUrls"
-            :key="index"
-            :name="index"
-            :img-src="url"
-          />
-        </q-carousel>
+      <div class="row no-wrap">
+        <q-img
+          class="img-view"
+          v-for="(url, index) of uploadedImageUrls"
+          fit="scale-down"
+          :key="index"
+          :src="url"
+        />
       </div>
     </q-dialog>
   </div>
@@ -325,9 +324,9 @@ div {
   max-height: 50vh;
 }
 
-.view-uploaded-container {
-  height: 100%;
-  width: 100%;
-  max-height: 50vh;
+.img-view {
+  height: 50vh;
+  width: 50vw;
+  margin: 1vh;
 }
 </style>
