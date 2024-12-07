@@ -22,6 +22,7 @@ const isLoading = ref(false)
 const isZoom = ref(false)
 const isFromUrl = ref(false)
 const showUploaded = ref(false)
+const carousel = ref(1)
 
 const isInputTextValid = computed(() => inputText.value && inputText.value.trim())
 const sendButtonEnabled = computed(() => !isLoading.value && isInputTextValid.value)
@@ -188,8 +189,8 @@ watch(
                   <q-item-section @click="() => (isFromUrl = true)">From Url...</q-item-section>
                 </q-item>
                 <q-separator />
-                <q-item clickable v-close-popup>
-                  <q-item-section @click="() => (showUploaded = true)">
+                <q-item clickable v-close-popup :disable="uploadedImageUrls.length == 0">
+                  <q-item-section @click="() => (showUploaded = uploadedImageUrls.length > 0)">
                     View Uploaded
                   </q-item-section>
                 </q-item>
@@ -240,7 +241,13 @@ watch(
         </q-card-actions>
       </q-card>
     </q-dialog>
-    <q-dialog v-model="showUploaded" backdrop-filter="brightness(60%)" />
+    <q-dialog v-model="showUploaded" backdrop-filter="brightness(60%)">
+      <div class="view-uploaded-container">
+        <q-carousel animated v-model="carousel" arrows navigation infinite>
+          <q-carousel-slide v-for="(url, index) of uploadedImageUrls" :key="index" :name="index" :img-src="url" />
+        </q-carousel>
+      </div>
+    </q-dialog>
   </div>
 </template>
 
@@ -296,6 +303,12 @@ div {
 
 .from-url-container {
   height: auto;
+  width: 100%;
+  max-height: 50vh;
+}
+
+.view-uploaded-container {
+  height: 100%;
   width: 100%;
   max-height: 50vh;
 }
