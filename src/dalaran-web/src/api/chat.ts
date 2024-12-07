@@ -79,7 +79,10 @@ export async function run(id: string, callback: (text: string) => void): Promise
   }
 }
 
-export async function uploadImages(id: string, files: FileList): Promise<UploadImagesResult> {
+export async function uploadImages(
+  id: string,
+  files: FileList | File[],
+): Promise<UploadImagesResult> {
   const path = `chat/${id}/images`
   const url = new URL(path, HOST)
 

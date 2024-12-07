@@ -13,12 +13,15 @@ const chatScroll = ref<QScrollArea | null>(null)
 
 const threadId: Ref<string> = ref('')
 
-const imageUrls: Ref<string[]> = ref([])
+const imageFromUrls: Ref<string> = ref('')
+const uploadedImageUrls: Ref<string[]> = ref([])
 const inputText: Ref<string | null> = ref('')
 const chatMessages: Ref<ChatMessage[]> = ref<ChatMessage[]>([])
 
 const isLoading = ref(false)
 const isZoom = ref(false)
+const isFromUrl = ref(false)
+const showUploaded = ref(false)
 
 const isInputTextValid = computed(() => inputText.value && inputText.value.trim())
 const sendButtonEnabled = computed(() => !isLoading.value && isInputTextValid.value)
@@ -33,14 +36,33 @@ const { open: openFileDialog, onChange: onImagesSelected } = useFileDialog({
 onImagesSelected(async (x) => {
   if (x) {
     const result = await uploadImages(threadId.value, x)
-    imageUrls.value.push(...result.urls)
+    uploadedImageUrls.value.push(...result.urls)
   }
 })
+
+async function uploadFromUrls() {
+  if (imageFromUrls.value) {
+    const urls = imageFromUrls.value.split('\n').filter((x) => x)
+    imageFromUrls.value = ''
+
+    const files = await Promise.all(
+      urls.map(async (x) => {
+        const fileName = x.split('/').pop()
+        const response = await fetch(x)
+        const blob = await response.blob()
+        return new File([blob], fileName!, { type: blob.type })
+      }),
+    )
+
+    const result = await uploadImages(threadId.value, files)
+    uploadedImageUrls.value.push(...result.urls)
+  }
+}
 
 async function startNew() {
   isLoading.value = true
 
-  imageUrls.value = []
+  uploadedImageUrls.value = []
   inputText.value = ''
   chatMessages.value = []
 
@@ -58,7 +80,7 @@ async function sendMessage() {
     const text = inputText.value!
 
     // Add last response and input.
-    const imageContents: ImageContent[] = imageUrls.value.map((x) => ({
+    const imageContents: ImageContent[] = uploadedImageUrls.value.map((x) => ({
       $type: ContentType.Image,
       uri: x,
     }))
@@ -71,7 +93,7 @@ async function sendMessage() {
 
     // Clear last response and input.
     responseContent = null
-    imageUrls.value = []
+    uploadedImageUrls.value = []
     inputText.value = ''
 
     // Add input text to chat component.
@@ -123,7 +145,14 @@ watch(
       >
         <template v-slot:stamp>
           <q-spinner-dots v-if="isLoading && index == chatMessages.length - 1" size="md" />
-          <q-btn v-else flat round size="xs" icon="content_copy" @click="copyText(chatMessage.text)" />
+          <q-btn
+            v-else
+            flat
+            round
+            size="xs"
+            icon="content_copy"
+            @click="copyText(chatMessage.text)"
+          />
         </template>
       </q-chat-message>
     </q-scroll-area>
@@ -148,8 +177,24 @@ watch(
           <q-btn flat icon="zoom_out_map" @click="() => (isZoom = true)">
             <q-tooltip class="text-body2">Zoom in</q-tooltip>
           </q-btn>
-          <q-btn flat icon="image" @click="() => openFileDialog()">
+          <q-btn flat icon="image">
             <q-tooltip class="text-body2">Upload images</q-tooltip>
+            <q-menu>
+              <q-list>
+                <q-item clickable v-close-popup>
+                  <q-item-section @click="() => openFileDialog()">From File...</q-item-section>
+                </q-item>
+                <q-item clickable v-close-popup>
+                  <q-item-section @click="() => (isFromUrl = true)">From Url...</q-item-section>
+                </q-item>
+                <q-separator />
+                <q-item clickable v-close-popup>
+                  <q-item-section @click="() => (showUploaded = true)">
+                    View Uploaded
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-menu>
           </q-btn>
         </template>
         <template #after>
@@ -177,6 +222,25 @@ watch(
         </q-input>
       </div>
     </q-dialog>
+    <q-dialog v-model="isFromUrl" backdrop-filter="grayscale(60%)" persistent>
+      <q-card class="from-url-container">
+        <q-card-section>
+          <q-input
+            label="Enter Urls (per line)"
+            class="input"
+            outlined
+            autogrow
+            autofocus
+            v-model="imageFromUrls"
+          />
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn flat label="OK" @click="uploadFromUrls" v-close-popup />
+          <q-btn flat label="Cancel" @click="() => (imageFromUrls = '')" v-close-popup />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+    <q-dialog v-model="showUploaded" backdrop-filter="brightness(60%)" />
   </div>
 </template>
 
@@ -228,5 +292,11 @@ div {
   height: auto;
   width: 100%;
   max-height: 80vh;
+}
+
+.from-url-container {
+  height: auto;
+  width: 100%;
+  max-height: 50vh;
 }
 </style>
