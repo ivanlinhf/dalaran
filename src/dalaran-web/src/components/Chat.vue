@@ -12,12 +12,12 @@ import type { ChatMessageContent, ImageContent } from '@/types/content'
 import { useClipboard, useFileDialog } from '@vueuse/core'
 
 import ImageViewer from '@/components/ImageViewer.vue'
+import UrlInput from '@/components/UrlInput.vue'
 
 const chatScroll = ref<QScrollArea | null>(null)
 
 const threadId: Ref<string> = ref('')
 
-const imageFromUrls: Ref<string> = ref('')
 const uploadedImageUrls: Ref<string[]> = ref([])
 const uploadedImageViewIndex: Ref<number> = ref(0)
 const inputText: Ref<string | null> = ref('')
@@ -45,11 +45,9 @@ onImagesSelected(async (x) => {
   }
 })
 
-async function uploadFromUrls() {
-  if (imageFromUrls.value) {
-    const urls = imageFromUrls.value.split('\n').filter((x) => x)
-    imageFromUrls.value = ''
-
+async function uploadFromUrls(urlsText: string) {
+  if (urlsText) {
+    const urls = urlsText.split('\n').filter((x) => x)
     const files = await Promise.all(
       urls.map(async (x) => {
         const fileName = x.split('/').pop()
@@ -271,24 +269,7 @@ watch(
         </q-input>
       </div>
     </q-dialog>
-    <q-dialog v-model="isFromUrl" backdrop-filter="grayscale(60%)" persistent>
-      <q-card class="from-url-container">
-        <q-card-section>
-          <q-input
-            label="Enter Urls (per line)"
-            class="input"
-            outlined
-            autogrow
-            autofocus
-            v-model="imageFromUrls"
-          />
-        </q-card-section>
-        <q-card-actions align="right">
-          <q-btn flat label="OK" @click="uploadFromUrls" v-close-popup />
-          <q-btn flat label="Cancel" @click="() => (imageFromUrls = '')" v-close-popup />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
+    <url-input v-model="isFromUrl" @submit="uploadFromUrls" />
     <image-viewer v-model="showUploaded" :urls="uploadedImageUrls" />
   </div>
 </template>
