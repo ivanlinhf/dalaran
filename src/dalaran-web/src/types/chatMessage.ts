@@ -1,7 +1,13 @@
 import type { AuthorRole } from '@/types/authorRole.ts'
 
+export enum ChatMessageType {
+  Text,
+  Image,
+  Html,
+}
+
 export type ChatMessage = {
   author: AuthorRole
-  text: string
-  isImage: boolean
+  content: string
+  type: ChatMessageType
 }
