@@ -31,7 +31,7 @@ watch(
 <template>
   <q-scroll-area ref="chatScroll">
     <q-chat-message
-      class="q-pa-lg"
+      class="chat q-pa-lg"
       v-for="(chatMessage, index) in model"
       :key="index"
       :sent="chatMessage.author == AuthorRole.User"
@@ -79,8 +79,17 @@ watch(
 </template>
 
 <style scoped lang="scss">
+.chat {
+  font-size: large;
+  white-space: pre-wrap;
+}
+
 .img-message {
   height: 15vh;
   width: 15vw;
+}
+
+:deep(code) {
+  color: blue;
 }
 </style>

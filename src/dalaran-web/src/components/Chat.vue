@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { useFileDialog } from '@vueuse/core'
+import { onMounted, ref } from 'vue'
 import { addMessages, run, uploadImages } from '@/api/chat'
 import { useThread } from '@/composables/thread'
 import { AuthorRole } from '@/types/authorRole'
@@ -9,6 +8,7 @@ import type { ChatMessage } from '@/types/chatMessage'
 import { ContentType } from '@/types/content'
 import type { ChatMessageContent, ImageContent } from '@/types/content'
 
+import ChatInput from '@/components/ChatInput.vue'
 import ChatViewer from '@/components/ChatViewer.vue'
 import ImageViewer from '@/components/ImageViewer.vue'
 import TextZoom from '@/components/TextZoom.vue'
@@ -23,22 +23,9 @@ const isZoom = ref(false)
 const isFromUrl = ref(false)
 const showUploaded = ref(false)
 
-const isInputTextValid = computed(() => inputText.value && inputText.value.trim())
-const sendButtonEnabled = computed(() => !isLoading.value && isInputTextValid.value)
-
 let responseContent: ChatMessageContent | null = null
 
 const { threadId, newThread } = useThread()
-const { open: openFileDialog, onChange: onImagesSelected } = useFileDialog({
-  accept: 'image/*',
-})
-
-onImagesSelected(async (x) => {
-  if (x) {
-    const result = await uploadImages(threadId.value, x)
-    uploadedImageUrls.value.push(...result.urls)
-  }
-})
 
 async function uploadFromUrls(urlsText: string) {
   if (urlsText) {
@@ -73,7 +60,7 @@ async function sendMessage() {
   isZoom.value = false
   isLoading.value = true
 
-  if (isInputTextValid.value) {
+  if (inputText.value) {
     const text = inputText.value!
 
     // Add last response and input.
@@ -130,111 +117,43 @@ onMounted(async () => {
 <template>
   <div class="container">
     <chat-viewer class="chat-viewer-container" v-model="chatMessages" :isLoading="isLoading" />
-    <div class="input-container q-pt-lg">
-      <q-input
-        class="input"
-        input-class="input-height"
-        outlined
-        clearable
-        clear-icon="close"
-        autogrow
-        v-model="inputText"
-        :disable="isLoading || !threadId"
-        @keydown.shift.enter.prevent="sendMessage"
-      >
-        <template #before>
-          <q-btn flat icon="add" @click="startNew">
-            <q-tooltip class="text-body2">Start new conversation</q-tooltip>
-          </q-btn>
-        </template>
-        <template #append>
-          <q-btn flat icon="fullscreen" @click="() => (isZoom = true)">
-            <q-tooltip class="text-body2">Zoom in</q-tooltip>
-          </q-btn>
-          <q-btn flat icon="image">
-            <q-tooltip class="text-body2">Upload images</q-tooltip>
-            <q-menu>
-              <q-list>
-                <q-item clickable v-close-popup>
-                  <q-item-section @click="() => openFileDialog()">From File...</q-item-section>
-                </q-item>
-                <q-item clickable v-close-popup>
-                  <q-item-section @click="() => (isFromUrl = true)">From Url...</q-item-section>
-                </q-item>
-                <q-separator />
-                <q-item clickable v-close-popup :disable="uploadedImageUrls.length == 0">
-                  <q-item-section @click="showUploaded = uploadedImageUrls.length > 0">
-                    View Uploaded
-                  </q-item-section>
-                </q-item>
-              </q-list>
-            </q-menu>
-          </q-btn>
-        </template>
-        <template #after>
-          <q-btn flat icon="send" :disable="!sendButtonEnabled" @click="sendMessage">
-            <q-tooltip class="text-body2">Send message</q-tooltip>
-          </q-btn>
-        </template>
-
-        <q-inner-loading :showing="isLoading" color="primary" />
-      </q-input>
-    </div>
+    <chat-input
+      class="chat-input-container q-pt-lg"
+      v-model:text="inputText"
+      v-model:uploadedImageUrls="uploadedImageUrls"
+      v-model:isZoom="isZoom"
+      v-model:isFromUrl="isFromUrl"
+      v-model:showUploaded="showUploaded"
+      :threadId="threadId"
+      :isLoading="isLoading"
+      @new="async () => await startNew()"
+      @submit="async () => await sendMessage()"
+    />
     <text-zoom
       v-model:showing="isZoom"
       v-model:text="inputText"
       @submit="async () => await sendMessage()"
     />
-    <url-input v-model="isFromUrl" @submit="uploadFromUrls" />
+    <url-input v-model="isFromUrl" @submit="async () => await uploadFromUrls()" />
     <image-viewer v-model="showUploaded" :urls="uploadedImageUrls" />
   </div>
 </template>
 
 <style scoped lang="scss">
-* {
-  font-size: large;
-}
-
-div {
-  margin: auto;
-  white-space: pre-wrap;
-}
-
 .container {
   height: 90vh;
   width: 90vw;
+  margin: auto;
 }
 
 .chat-viewer-container {
   height: 80%;
   width: 60%;
-  margin-top: 5%;
+  margin: 5% auto auto auto;
 }
 
-.input-container {
+.chat-input-container {
   height: 15%;
   width: 50%;
-}
-
-.input {
-  :deep(.q-field__before) {
-    align-self: flex-end;
-  }
-
-  :deep(.q-field__append) {
-    align-self: flex-end;
-  }
-
-  :deep(.q-field__after) {
-    align-self: flex-end;
-  }
-}
-
-:deep(.input-height) {
-  max-height: 15vh;
-}
-
-:deep(code) {
-  color: blue;
 }
 </style>
