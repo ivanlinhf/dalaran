@@ -11,6 +11,8 @@ import { ContentType } from '@/types/content'
 import type { ChatMessageContent, ImageContent } from '@/types/content'
 import { useClipboard, useFileDialog } from '@vueuse/core'
 
+import ImageViewer from '@/components/ImageViewer.vue'
+
 const chatScroll = ref<QScrollArea | null>(null)
 
 const threadId: Ref<string> = ref('')
@@ -60,17 +62,6 @@ async function uploadFromUrls() {
     const result = await uploadImages(threadId.value, files)
     uploadedImageUrls.value.push(...result.urls)
   }
-}
-
-function decreaseUploadedImageViewIndex() {
-  uploadedImageViewIndex.value = Math.max(uploadedImageViewIndex.value - 1, 0)
-}
-
-function increaseUploadedImageViewIndex() {
-  uploadedImageViewIndex.value = Math.min(
-    uploadedImageViewIndex.value + 1,
-    uploadedImageUrls.value.length - 1,
-  )
 }
 
 async function startNew() {
@@ -225,7 +216,7 @@ watch(
           </q-btn>
         </template>
         <template #append>
-          <q-btn flat icon="zoom_out_map" @click="() => (isZoom = true)">
+          <q-btn flat icon="fullscreen" @click="() => (isZoom = true)">
             <q-tooltip class="text-body2">Zoom in</q-tooltip>
           </q-btn>
           <q-btn flat icon="image">
@@ -298,30 +289,7 @@ watch(
         </q-card-actions>
       </q-card>
     </q-dialog>
-    <q-dialog
-      v-model="showUploaded"
-      backdrop-filter="brightness(60%)"
-      @keydown.left.prevent="decreaseUploadedImageViewIndex"
-      @keydown.right.prevent="increaseUploadedImageViewIndex"
-    >
-      <div class="row no-wrap">
-        <q-icon
-          class="self-center img-arrow"
-          size="xl"
-          :color="uploadedImageViewIndex > 0 ? 'white' : 'grey-7'"
-          name="arrow_back_ios"
-          @click="decreaseUploadedImageViewIndex"
-        />
-        <q-img class="img-view" fit="scale-down" :src="uploadedImageUrls[uploadedImageViewIndex]" />
-        <q-icon
-          class="self-center img-arrow"
-          size="xl"
-          :color="uploadedImageViewIndex < uploadedImageUrls.length - 1 ? 'white' : 'grey-7'"
-          name="arrow_forward_ios"
-          @click="increaseUploadedImageViewIndex"
-        />
-      </div>
-    </q-dialog>
+    <image-viewer v-model="showUploaded" :urls="uploadedImageUrls" />
   </div>
 </template>
 
@@ -384,15 +352,6 @@ div {
   height: auto;
   width: 100%;
   max-height: 50vh;
-}
-
-.img-view {
-  height: 30vh;
-  width: 30vw;
-}
-
-.img-arrow {
-  cursor: pointer;
 }
 
 :deep(code) {
