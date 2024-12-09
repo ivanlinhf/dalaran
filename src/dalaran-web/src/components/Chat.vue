@@ -12,6 +12,7 @@ import type { ChatMessageContent, ImageContent } from '@/types/content'
 import { useClipboard, useFileDialog } from '@vueuse/core'
 
 import ImageViewer from '@/components/ImageViewer.vue'
+import TextZoom from '@/components/TextZoom.vue'
 import UrlInput from '@/components/UrlInput.vue'
 
 const chatScroll = ref<QScrollArea | null>(null)
@@ -253,28 +254,17 @@ watch(
         <q-inner-loading :showing="isLoading" color="primary" />
       </q-input>
     </div>
-    <q-dialog v-model="isZoom" backdrop-filter="blur(4px)">
-      <div class="zoom-container">
-        <q-input
-          class="input"
-          standout
-          dark
-          autogrow
-          autofocus
-          clearable
-          clear-icon="close"
-          v-model="inputText"
-          @keydown.shift.enter.prevent="sendMessage"
-        >
-        </q-input>
-      </div>
-    </q-dialog>
+    <text-zoom
+      v-model:showing="isZoom"
+      v-model:text="inputText"
+      @submit="async () => await sendMessage()"
+    />
     <url-input v-model="isFromUrl" @submit="uploadFromUrls" />
     <image-viewer v-model="showUploaded" :urls="uploadedImageUrls" />
   </div>
 </template>
 
-<style lang="scss" scoped>
+<style scoped lang="scss">
 * {
   font-size: large;
 }
@@ -321,18 +311,6 @@ div {
 
 :deep(.input-height) {
   max-height: 15vh;
-}
-
-.zoom-container {
-  height: auto;
-  width: 100%;
-  max-height: 80vh;
-}
-
-.from-url-container {
-  height: auto;
-  width: 100%;
-  max-height: 50vh;
 }
 
 :deep(code) {
