@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { Ref } from 'vue'
 import { computed, onMounted, ref } from 'vue'
 import { useFileDialog } from '@vueuse/core'
-import { addMessages, create, run, uploadImages } from '@/api/chat'
+import { addMessages, run, uploadImages } from '@/api/chat'
+import { useThread } from '@/composables/thread'
 import { AuthorRole } from '@/types/authorRole'
 import { ChatMessageType } from '@/types/chatMessage'
 import type { ChatMessage } from '@/types/chatMessage'
@@ -14,11 +14,9 @@ import ImageViewer from '@/components/ImageViewer.vue'
 import TextZoom from '@/components/TextZoom.vue'
 import UrlInput from '@/components/UrlInput.vue'
 
-const threadId: Ref<string> = ref('')
-
-const uploadedImageUrls: Ref<string[]> = ref([])
-const inputText: Ref<string | null> = ref('')
-const chatMessages: Ref<ChatMessage[]> = ref<ChatMessage[]>([])
+const uploadedImageUrls = ref<string[]>([])
+const inputText = ref<string | null>('')
+const chatMessages = ref<ChatMessage[]>([])
 
 const isLoading = ref(false)
 const isZoom = ref(false)
@@ -30,6 +28,7 @@ const sendButtonEnabled = computed(() => !isLoading.value && isInputTextValid.va
 
 let responseContent: ChatMessageContent | null = null
 
+const { threadId, newThread } = useThread()
 const { open: openFileDialog, onChange: onImagesSelected } = useFileDialog({
   accept: 'image/*',
 })
@@ -65,8 +64,7 @@ async function startNew() {
   inputText.value = ''
   chatMessages.value = []
 
-  const meta = await create()
-  threadId.value = meta.threadId
+  await newThread()
 
   isLoading.value = false
 }
