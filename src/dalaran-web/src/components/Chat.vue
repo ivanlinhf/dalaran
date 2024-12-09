@@ -17,6 +17,7 @@ const threadId: Ref<string> = ref('')
 
 const imageFromUrls: Ref<string> = ref('')
 const uploadedImageUrls: Ref<string[]> = ref([])
+const uploadedImageViewIndex: Ref<number> = ref(0)
 const inputText: Ref<string | null> = ref('')
 const chatMessages: Ref<ChatMessage[]> = ref<ChatMessage[]>([])
 
@@ -24,7 +25,6 @@ const isLoading = ref(false)
 const isZoom = ref(false)
 const isFromUrl = ref(false)
 const showUploaded = ref(false)
-const carousel = ref(1)
 
 const isInputTextValid = computed(() => inputText.value && inputText.value.trim())
 const sendButtonEnabled = computed(() => !isLoading.value && isInputTextValid.value)
@@ -60,6 +60,17 @@ async function uploadFromUrls() {
     const result = await uploadImages(threadId.value, files)
     uploadedImageUrls.value.push(...result.urls)
   }
+}
+
+function decreaseUploadedImageViewIndex() {
+  uploadedImageViewIndex.value = Math.max(uploadedImageViewIndex.value - 1, 0)
+}
+
+function increaseUploadedImageViewIndex() {
+  uploadedImageViewIndex.value = Math.min(
+    uploadedImageViewIndex.value + 1,
+    uploadedImageUrls.value.length - 1,
+  )
 }
 
 async function startNew() {
@@ -229,7 +240,14 @@ watch(
                 </q-item>
                 <q-separator />
                 <q-item clickable v-close-popup :disable="uploadedImageUrls.length == 0">
-                  <q-item-section @click="() => (showUploaded = uploadedImageUrls.length > 0)">
+                  <q-item-section
+                    @click="
+                      () => {
+                        uploadedImageViewIndex = 0
+                        showUploaded = uploadedImageUrls.length > 0
+                      }
+                    "
+                  >
                     View Uploaded
                   </q-item-section>
                 </q-item>
@@ -280,14 +298,27 @@ watch(
         </q-card-actions>
       </q-card>
     </q-dialog>
-    <q-dialog v-model="showUploaded" backdrop-filter="brightness(60%)">
+    <q-dialog
+      v-model="showUploaded"
+      backdrop-filter="brightness(60%)"
+      @keydown.left.prevent="decreaseUploadedImageViewIndex"
+      @keydown.right.prevent="increaseUploadedImageViewIndex"
+    >
       <div class="row no-wrap">
-        <q-img
-          class="img-view"
-          v-for="(url, index) of uploadedImageUrls"
-          fit="scale-down"
-          :key="index"
-          :src="url"
+        <q-icon
+          class="self-center img-arrow"
+          size="xl"
+          :color="uploadedImageViewIndex > 0 ? 'white' : 'grey-7'"
+          name="arrow_back_ios"
+          @click="decreaseUploadedImageViewIndex"
+        />
+        <q-img class="img-view" fit="scale-down" :src="uploadedImageUrls[uploadedImageViewIndex]" />
+        <q-icon
+          class="self-center img-arrow"
+          size="xl"
+          :color="uploadedImageViewIndex < uploadedImageUrls.length - 1 ? 'white' : 'grey-7'"
+          name="arrow_forward_ios"
+          @click="increaseUploadedImageViewIndex"
         />
       </div>
     </q-dialog>
@@ -356,9 +387,12 @@ div {
 }
 
 .img-view {
-  height: 50vh;
-  width: 50vw;
-  margin: 1vh;
+  height: 30vh;
+  width: 30vw;
+}
+
+.img-arrow {
+  cursor: pointer;
 }
 
 :deep(code) {
