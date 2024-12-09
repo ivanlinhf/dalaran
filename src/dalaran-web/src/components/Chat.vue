@@ -134,7 +134,7 @@ onMounted(async () => {
       v-model:text="inputText"
       @submit="async () => await sendMessage()"
     />
-    <url-input v-model="isFromUrl" @submit="async () => await uploadFromUrls()" />
+    <url-input v-model="isFromUrl" @submit="async (x) => await uploadFromUrls(x)" />
     <image-viewer v-model="showUploaded" :urls="uploadedImageUrls" />
   </div>
 </template>
