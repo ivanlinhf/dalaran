@@ -20,7 +20,6 @@ const chatScroll = ref<QScrollArea | null>(null)
 const threadId: Ref<string> = ref('')
 
 const uploadedImageUrls: Ref<string[]> = ref([])
-const uploadedImageViewIndex: Ref<number> = ref(0)
 const inputText: Ref<string | null> = ref('')
 const chatMessages: Ref<ChatMessage[]> = ref<ChatMessage[]>([])
 
@@ -230,14 +229,7 @@ watch(
                 </q-item>
                 <q-separator />
                 <q-item clickable v-close-popup :disable="uploadedImageUrls.length == 0">
-                  <q-item-section
-                    @click="
-                      () => {
-                        uploadedImageViewIndex = 0
-                        showUploaded = uploadedImageUrls.length > 0
-                      }
-                    "
-                  >
+                  <q-item-section @click="showUploaded = uploadedImageUrls.length > 0">
                     View Uploaded
                   </q-item-section>
                 </q-item>

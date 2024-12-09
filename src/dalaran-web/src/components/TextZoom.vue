@@ -35,5 +35,9 @@ defineEmits<{
 
 .input {
   font-size: large;
+
+  :deep(.q-field__append) {
+    align-self: flex-end;
+  }
 }
 </style>
