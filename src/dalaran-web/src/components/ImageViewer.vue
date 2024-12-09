@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watchEffect } from 'vue'
 
-const model = defineModel({ type: Boolean })
+const model = defineModel<boolean>({ required: true })
 
 const props = defineProps<{
   urls: string[]

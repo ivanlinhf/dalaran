@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-const model = defineModel({ type: Boolean })
+const model = defineModel<boolean>({ required: true })
 
 defineEmits<{
   (e: 'submit', urlsText: string): void
