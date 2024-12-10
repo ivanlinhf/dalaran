@@ -26,7 +26,7 @@ const isImageViewer = ref(false)
 
 const sendButtonEnabled = computed(() => !props.isLoading && text.value)
 
-const { open, onChange } = useFileDialog({
+const { open, onChange, reset } = useFileDialog({
   accept: 'image/*',
 })
 
@@ -34,6 +34,8 @@ onChange(async (x) => {
   if (x) {
     const result = await uploadImages(props.threadId, x)
     uploadedImageUrls.value.push(...result.urls)
+
+    reset()
   }
 })
 
