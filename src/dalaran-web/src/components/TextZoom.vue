@@ -19,7 +19,12 @@ defineEmits<{
         clearable
         clear-icon="close"
         v-model="text"
-        @keydown.shift.enter.prevent="$emit('submit')"
+        @keydown.shift.enter.prevent="
+          () => {
+            showing = false
+            $emit('submit')
+          }
+        "
       >
       </q-input>
     </div>
