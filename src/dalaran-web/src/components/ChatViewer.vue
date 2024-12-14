@@ -10,7 +10,7 @@ import { AuthorRole } from '@/types/authorRole.ts'
 const model = defineModel<ChatMessage[]>({ required: true })
 
 const props = defineProps<{
-  isLoading: boolean
+  isResponding: boolean
 }>()
 
 const chatScroll = ref<QScrollArea | null>(null)
@@ -47,7 +47,14 @@ watch(
       </template>
 
       <template v-slot:stamp>
-        <q-spinner-dots v-if="props.isLoading && index == model.length - 1" size="md" />
+        <q-spinner-dots
+          v-if="
+            props.isResponding &&
+            index == model.length - 1 &&
+            chatMessage.author == AuthorRole.Assistant
+          "
+          size="md"
+        />
         <div v-else>
           <q-btn flat round size="xs" icon="content_copy" @click="copy(chatMessage.content)">
             <q-tooltip>Copy</q-tooltip>

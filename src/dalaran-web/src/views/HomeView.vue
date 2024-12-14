@@ -16,6 +16,7 @@ const inputText = ref<string | null>('')
 const chatMessages = ref<ChatMessage[]>([])
 
 const isLoading = ref(false)
+const isResponding = ref(false)
 
 let responseContent: ChatMessageContent | null = null
 
@@ -71,9 +72,11 @@ async function sendMessage() {
 
     // Get response.
     const responseMessage = chatMessages.value[chatMessages.value.length - 1]
+    isResponding.value = true
     await run(threadId.value, (x) => {
       responseMessage.content += x
     })
+    isResponding.value = false
 
     // Store response.
     responseContent = {
@@ -93,7 +96,11 @@ onMounted(async () => {
 <template>
   <main>
     <div class="container">
-      <chat-viewer class="chat-viewer-container" v-model="chatMessages" :isLoading="isLoading" />
+      <chat-viewer
+        class="chat-viewer-container"
+        v-model="chatMessages"
+        :isResponding="isResponding"
+      />
       <chat-input
         class="chat-input-container q-pt-lg"
         v-model:text="inputText"
