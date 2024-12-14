@@ -89,12 +89,12 @@ watch(
   width: 15vw;
 }
 
-:deep(code) {
-  color: blue;
-  white-space: pre-wrap;
-}
-
 .html * {
   margin: auto;
+
+  :deep(code) {
+    color: blue;
+    white-space: pre-wrap;
+  }
 }
 </style>
