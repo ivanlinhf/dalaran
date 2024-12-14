@@ -43,7 +43,7 @@ watch(
         <q-img class="img-message" spinner-color="white" fit="contain" :src="chatMessage.content" />
       </template>
       <template v-else-if="chatMessage.type == ChatMessageType.Html" v-slot:default>
-        <p v-html="marked(chatMessage.content)" />
+        <div class="html" v-html="marked(chatMessage.content)" />
       </template>
 
       <template v-slot:stamp>
@@ -91,5 +91,10 @@ watch(
 
 :deep(code) {
   color: blue;
+  white-space: pre-wrap;
+}
+
+.html * {
+  margin: auto;
 }
 </style>
