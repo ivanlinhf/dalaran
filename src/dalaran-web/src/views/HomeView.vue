@@ -14,6 +14,7 @@ import ChatViewer from '@/components/ChatViewer.vue'
 const uploadedImageUrls = ref<string[]>([])
 const inputText = ref<string | null>('')
 const chatMessages = ref<ChatMessage[]>([])
+const chatMessageTypes = ref<ChatMessageType[]>([])
 
 const isLoading = ref(false)
 const isResponding = ref(false)
@@ -28,6 +29,7 @@ async function startNew() {
   uploadedImageUrls.value = []
   inputText.value = ''
   chatMessages.value = []
+  chatMessageTypes.value = []
 
   await newThread()
 
@@ -58,16 +60,18 @@ async function sendMessage() {
     inputText.value = ''
 
     // Add input to chat component.
-    chatMessages.value.push(
-      ...imageContents.map((x) => {
-        return { author: AuthorRole.User, content: x.uri, type: ChatMessageType.Image }
-      }),
-    )
-    chatMessages.value.push({ author: AuthorRole.User, content: text, type: ChatMessageType.Text })
+    imageContents.forEach((x) => {
+      chatMessageTypes.value.push(ChatMessageType.Image)
+      chatMessages.value.push({ author: AuthorRole.User, content: x.uri })
+    })
+
+    chatMessageTypes.value.push(ChatMessageType.Text)
+    chatMessages.value.push({ author: AuthorRole.User, content: text })
+
+    chatMessageTypes.value.push(ChatMessageType.Text)
     chatMessages.value.push({
       author: AuthorRole.Assistant,
       content: '',
-      type: ChatMessageType.Text,
     })
 
     // Get response.
@@ -98,7 +102,8 @@ onMounted(async () => {
     <div class="container">
       <chat-viewer
         class="chat-viewer-container"
-        v-model="chatMessages"
+        v-model:messages="chatMessages"
+        v-model:types="chatMessageTypes"
         :isResponding="isResponding"
       />
       <chat-input

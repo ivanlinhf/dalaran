@@ -9,5 +9,4 @@ export enum ChatMessageType {
 export type ChatMessage = {
   author: AuthorRole
   content: string
-  type: ChatMessageType
 }

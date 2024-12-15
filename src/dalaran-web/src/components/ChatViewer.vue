@@ -7,7 +7,8 @@ import { ChatMessageType } from '@/types/chatMessage.ts'
 import type { ChatMessage } from '@/types/chatMessage.ts'
 import { AuthorRole } from '@/types/authorRole.ts'
 
-const model = defineModel<ChatMessage[]>({ required: true })
+const messages = defineModel<ChatMessage[]>('messages', { required: true })
+const types = defineModel<ChatMessageType[]>('types', { required: true })
 
 const props = defineProps<{
   isResponding: boolean
@@ -18,11 +19,11 @@ const chatScroll = ref<QScrollArea | null>(null)
 const { copy } = useClipboard()
 
 watch(
-  model,
+  messages,
   () => {
-    if (chatScroll.value) {
-      chatScroll.value.setScrollPercentage('vertical', 1.0)
-    }
+    setTimeout(() => {
+      chatScroll.value?.setScrollPercentage('vertical', 1.0)
+    }, 100)
   },
   { deep: true },
 )
@@ -32,50 +33,50 @@ watch(
   <q-scroll-area ref="chatScroll">
     <q-chat-message
       class="chat q-pa-lg"
-      v-for="(chatMessage, index) in model"
+      v-for="(message, index) in messages"
       :key="index"
-      :sent="chatMessage.author == AuthorRole.User"
-      :text="[chatMessage.content]"
-      :bg-color="chatMessage.author == AuthorRole.User ? 'green-3' : 'grey-3'"
-      :avatar="chatMessage.author == AuthorRole.User ? 'question.png' : 'answer.png'"
+      :sent="message.author == AuthorRole.User"
+      :text="[message.content]"
+      :bg-color="message.author == AuthorRole.User ? 'green-3' : 'grey-3'"
+      :avatar="message.author == AuthorRole.User ? 'question.png' : 'answer.png'"
     >
-      <template v-if="chatMessage.type == ChatMessageType.Image" v-slot:default>
-        <q-img class="img-message" spinner-color="white" fit="contain" :src="chatMessage.content" />
+      <template v-if="types[index] == ChatMessageType.Image" v-slot:default>
+        <q-img class="img-message" spinner-color="white" fit="contain" :src="message.content" />
       </template>
-      <template v-else-if="chatMessage.type == ChatMessageType.Html" v-slot:default>
-        <div class="html" v-html="marked(chatMessage.content)" />
+      <template v-else-if="types[index] == ChatMessageType.Html" v-slot:default>
+        <div class="html" v-html="marked(message.content)" />
       </template>
 
       <template v-slot:stamp>
         <q-spinner-dots
           v-if="
             props.isResponding &&
-            index == model.length - 1 &&
-            chatMessage.author == AuthorRole.Assistant
+            index == messages.length - 1 &&
+            message.author == AuthorRole.Assistant
           "
           size="md"
         />
         <div v-else>
-          <q-btn flat round size="xs" icon="content_copy" @click="copy(chatMessage.content)">
+          <q-btn flat round size="xs" icon="content_copy" @click="copy(message.content)">
             <q-tooltip>Copy</q-tooltip>
           </q-btn>
           <q-btn
-            v-if="chatMessage.type == ChatMessageType.Text"
+            v-if="types[index] == ChatMessageType.Text"
             flat
             round
             size="xs"
             icon="visibility"
-            @click="chatMessage.type = ChatMessageType.Html"
+            @click="types[index] = ChatMessageType.Html"
           >
             <q-tooltip>Preview</q-tooltip>
           </q-btn>
           <q-btn
-            v-else-if="chatMessage.type == ChatMessageType.Html"
+            v-else-if="types[index] == ChatMessageType.Html"
             flat
             round
             size="xs"
             icon="visibility_off"
-            @click="chatMessage.type = ChatMessageType.Text"
+            @click="types[index] = ChatMessageType.Text"
           >
             <q-tooltip>Quit preview</q-tooltip>
           </q-btn>
