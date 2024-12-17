@@ -16,8 +16,6 @@ defineEmits<{
         dark
         autogrow
         autofocus
-        clearable
-        clear-icon="close"
         v-model="text"
         @keydown.shift.enter.prevent="
           () => {

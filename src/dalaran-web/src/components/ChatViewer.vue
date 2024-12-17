@@ -2,7 +2,6 @@
 import { marked } from 'marked'
 import { QScrollArea } from 'quasar'
 import { ref, watch } from 'vue'
-import { useClipboard } from '@vueuse/core'
 import { ChatMessageType } from '@/types/chatMessage.ts'
 import type { ChatMessage } from '@/types/chatMessage.ts'
 import { AuthorRole } from '@/types/authorRole.ts'
@@ -16,7 +15,20 @@ const props = defineProps<{
 
 const chatScroll = ref<QScrollArea | null>(null)
 
-const { copy } = useClipboard()
+async function copy(index: number) {
+  const type = types.value[index]
+  if (type == ChatMessageType.Html) {
+    const html = await marked(messages.value[index].content)
+    const blob = new Blob([html], { type: 'text/html' })
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        'text/html': blob,
+      }),
+    ])
+  } else {
+    await navigator.clipboard.writeText(messages.value[index].content)
+  }
+}
 
 watch(
   messages,
@@ -57,7 +69,7 @@ watch(
           size="md"
         />
         <div v-else>
-          <q-btn flat round size="xs" icon="content_copy" @click="copy(message.content)">
+          <q-btn flat round size="xs" icon="content_copy" @click="copy(index)">
             <q-tooltip>Copy</q-tooltip>
           </q-btn>
           <q-btn
