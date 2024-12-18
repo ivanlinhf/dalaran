@@ -6,6 +6,8 @@ import { ChatMessageType } from '@/types/chatMessage.ts'
 import type { ChatMessage } from '@/types/chatMessage.ts'
 import { AuthorRole } from '@/types/authorRole.ts'
 
+import ImageViewer from '@/components/ImageViewer.vue'
+
 const messages = defineModel<ChatMessage[]>('messages', { required: true })
 const types = defineModel<ChatMessageType[]>('types', { required: true })
 
@@ -14,6 +16,8 @@ const props = defineProps<{
 }>()
 
 const chatScroll = ref<QScrollArea | null>(null)
+const isImageViewer = ref(false)
+const clickedImageIndex = ref(0)
 
 async function copy(index: number) {
   const type = types.value[index]
@@ -61,7 +65,22 @@ watch(
       :avatar="message.author == AuthorRole.User ? 'question.png' : 'answer.png'"
     >
       <template v-if="types[index] == ChatMessageType.Image" v-slot:default>
-        <q-img class="img-message" spinner-color="white" fit="contain" :src="message.content" />
+        <q-img
+          class="img-message"
+          spinner-color="white"
+          fit="contain"
+          :src="message.content"
+          @click="
+            () => {
+              isImageViewer = types.some((x) => x == ChatMessageType.Image)
+              if (isImageViewer) {
+                clickedImageIndex = index
+              } else {
+                clickedImageIndex = 0
+              }
+            }
+          "
+        />
       </template>
       <template v-else-if="types[index] == ChatMessageType.Html" v-slot:default>
         <div class="html" v-html="marked(message.content)" />
@@ -103,6 +122,12 @@ watch(
         </div>
       </template>
     </q-chat-message>
+
+    <image-viewer
+      v-model="isImageViewer"
+      :urls="messages.filter((_, i) => types[i] == ChatMessageType.Image).map((x) => x.content)"
+      :start="clickedImageIndex"
+    />
   </q-scroll-area>
 </template>
 
@@ -115,6 +140,7 @@ watch(
 .img-message {
   height: 15vh;
   width: 15vw;
+  cursor: pointer;
 }
 
 .html * {

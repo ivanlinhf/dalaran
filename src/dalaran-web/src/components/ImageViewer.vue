@@ -5,6 +5,7 @@ const model = defineModel<boolean>({ required: true })
 
 const props = defineProps<{
   urls: string[]
+  start?: number
 }>()
 
 const index = ref(0)
@@ -16,6 +17,12 @@ function previous() {
 function next() {
   index.value = Math.min(index.value + 1, props.urls.length - 1)
 }
+
+watchEffect(() => {
+  if (model.value) {
+    index.value = props.start ?? 0
+  }
+})
 
 watchEffect(() => {
   if (index.value > props.urls.length - 1) {
