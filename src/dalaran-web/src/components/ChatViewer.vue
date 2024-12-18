@@ -25,8 +25,16 @@ async function copy(index: number) {
         'text/html': blob,
       }),
     ])
-  } else {
+  } else if (type == ChatMessageType.Text) {
     await navigator.clipboard.writeText(messages.value[index].content)
+  } else if (type == ChatMessageType.Image) {
+    const response = await fetch(messages.value[index].content)
+    const blob = new Blob([await response.blob()], { type: 'image/png' })
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        [blob.type]: blob,
+      }),
+    ])
   }
 }
 
