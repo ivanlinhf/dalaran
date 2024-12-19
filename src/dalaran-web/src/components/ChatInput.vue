@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import * as pdfjs from 'pdfjs-dist'
 import { computed, ref } from 'vue'
 import { useFileDialog } from '@vueuse/core'
 import { uploadImages } from '@/api/chat.ts'
@@ -6,6 +7,8 @@ import { uploadImages } from '@/api/chat.ts'
 import ImageViewer from '@/components/ImageViewer.vue'
 import TextZoom from '@/components/TextZoom.vue'
 import UrlInput from '@/components/UrlInput.vue'
+
+pdfjs.GlobalWorkerOptions.workerSrc = 'pdf.worker.mjs'
 
 const text = defineModel<string | null>('text', { required: true })
 const uploadedImageUrls = defineModel<string[]>('uploadedImageUrls', { required: true })
@@ -26,16 +29,79 @@ const isImageViewer = ref(false)
 
 const sendButtonEnabled = computed(() => !props.isLoading && text.value)
 
-const { open, onChange, reset } = useFileDialog({
+const {
+  open: imageOpen,
+  onChange: imagesSelected,
+  reset: imageReset,
+} = useFileDialog({
   accept: 'image/*',
 })
 
-onChange(async (x) => {
+const {
+  open: pdfOpen,
+  onChange: pdfSelected,
+  reset: pdfReset,
+} = useFileDialog({
+  accept: 'application/pdf',
+  multiple: false,
+})
+
+imagesSelected(async (x) => {
   if (x) {
     const result = await uploadImages(props.threadId, x)
     uploadedImageUrls.value.push(...result.urls)
 
-    reset()
+    imageReset()
+  }
+})
+
+function canvasToFile(canvas: HTMLCanvasElement, filename: string): Promise<File> {
+  return new Promise<File>((resolve, reject) => {
+    canvas.toBlob((blob: Blob | null) => {
+      if (blob) {
+        const file = new File([blob], filename, { type: 'image/png' })
+        resolve(file)
+      } else {
+        reject(new Error('Canvas conversion to Blob failed'))
+      }
+    }, 'image/png')
+  })
+}
+
+pdfSelected(async (x) => {
+  if (x) {
+    const f = x[0]
+    const buffer = await f.arrayBuffer()
+    const loadingTask = pdfjs.getDocument({
+      data: buffer,
+      cMapUrl: 'cmaps/',
+      cMapPacked: true,
+      standardFontDataUrl: 'standard_fonts/',
+    })
+    const pdf = await loadingTask.promise
+
+    const files: File[] = []
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      const page = await pdf.getPage(pageNum)
+      const viewport = page.getViewport({ scale: 2 })
+      const canvas = document.createElement('canvas')
+      const context = canvas.getContext('2d')
+      canvas.height = viewport.height
+      canvas.width = viewport.width
+
+      const renderContext = {
+        canvasContext: context!,
+        viewport: viewport,
+      }
+
+      await page.render(renderContext).promise
+      files.push(await canvasToFile(canvas, `${f.name}_${pageNum}.png`))
+    }
+
+    const result = await uploadImages(props.threadId, files)
+    uploadedImageUrls.value.push(...result.urls)
+
+    pdfReset()
   }
 })
 
@@ -85,10 +151,13 @@ async function uploadFromUrls(urlsText: string) {
           <q-menu>
             <q-list class="menu-list">
               <q-item clickable v-close-popup>
-                <q-item-section @click="() => open()">From File...</q-item-section>
+                <q-item-section @click="() => imageOpen()">From File...</q-item-section>
               </q-item>
               <q-item clickable v-close-popup>
                 <q-item-section @click="() => (isUrlInput = true)">From Url...</q-item-section>
+              </q-item>
+              <q-item clickable v-close-popup>
+                <q-item-section @click="() => pdfOpen()">From Pdf...</q-item-section>
               </q-item>
               <q-separator />
               <q-item clickable v-close-popup :disable="uploadedImageUrls.length == 0">
