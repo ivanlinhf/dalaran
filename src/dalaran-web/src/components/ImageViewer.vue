@@ -60,8 +60,8 @@ watchEffect(() => {
 
 <style scoped lang="scss">
 .img-view {
-  height: 30vh;
-  width: 30vw;
+  height: 80vh;
+  width: 80vw;
 }
 
 .img-arrow {

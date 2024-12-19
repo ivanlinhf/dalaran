@@ -17,6 +17,7 @@
     "@quasar/extras": "^1.16.13",
     "@vueuse/core": "^12.0.0",
     "marked": "^15.0.3",
+    "pdfjs-dist": "^4.9.155",
     "quasar": "^2.17.4",
     "vue": "^3.5.12",
     "vue-router": "^4.4.5"
