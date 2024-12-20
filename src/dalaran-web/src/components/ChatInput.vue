@@ -8,7 +8,7 @@ import ImageViewer from '@/components/ImageViewer.vue'
 import TextZoom from '@/components/TextZoom.vue'
 import UrlInput from '@/components/UrlInput.vue'
 
-pdfjs.GlobalWorkerOptions.workerSrc = 'pdf.worker.mjs'
+pdfjs.GlobalWorkerOptions.workerSrc = 'pdf.worker.js'
 
 const text = defineModel<string | null>('text', { required: true })
 const uploadedImageUrls = defineModel<string[]>('uploadedImageUrls', { required: true })
