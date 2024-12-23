@@ -1,5 +1,7 @@
 namespace Dalaran.Server
 
+open System
+open System.Net.Http
 open System.Text.Json
 
 open Microsoft.AspNetCore.Builder
@@ -32,10 +34,19 @@ module Program =
 
         builder.AddAzureOpenAIClient("OpenAI", fun cs -> cs.Key <- builder.Configuration["OpenAI_Api_Key"])
 
-        builder.Services.AddSingleton<WebSearchEnginePlugin>(fun _ ->
+        builder.Services
+            .AddSingleton<HttpClient>(fun _ -> new HttpClient(Timeout = TimeSpan.FromSeconds(15.0)))
+            .AddHttpClient("BingSearchHttpClient")
+        |> ignore
+
+        builder.Services.AddSingleton<WebSearchEnginePlugin>(fun sp ->
             let apiKey = builder.Configuration["Bing_Api_Key"]
-            let connector = BingConnector apiKey
-            WebSearchEnginePlugin connector)
+
+            let httpClient =
+                sp.GetRequiredService<IHttpClientFactory>().CreateClient("BingSearchHttpClient")
+
+            let connector = BingConnector(apiKey, httpClient)
+            WebSearchEnginePlugin(connector))
         |> ignore
 
         builder.Services.AddSingleton<KernelPluginCollection>(fun sp ->
